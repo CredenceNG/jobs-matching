@@ -9,6 +9,7 @@ export interface JWTPayload {
   userId: string
   email: string
   role: string
+  isAdmin?: boolean
 }
 
 /**
@@ -35,4 +36,17 @@ export async function isAdmin(request: NextRequest): Promise<boolean> {
 export async function getUserFromToken(request: NextRequest): Promise<JWTPayload | null> {
   const payload = await verifyJWT(request)
   return payload
+}
+
+/**
+ * Verify authentication (alias for verifyJWT)
+ * Can accept either a NextRequest or a token string
+ */
+export async function verifyAuth(requestOrToken: NextRequest | string): Promise<JWTPayload | null> {
+  if (typeof requestOrToken === 'string') {
+    // Token string passed directly - stub implementation
+    // TODO: Implement actual JWT verification from token string
+    return null
+  }
+  return verifyJWT(requestOrToken)
 }

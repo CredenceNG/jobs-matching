@@ -10,18 +10,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Admin auth user ID (from Supabase)
-  const adminAuthUserId = '0bcb5338-8bab-431a-9435-07a25e224770';
-
   // 1. Create admin user
   const adminUser = await prisma.user.upsert({
-    where: { authUserId: adminAuthUserId },
+    where: { email: 'admin@jobai.com' },
     update: {
       isAdmin: true,
       isPremium: true,
     },
     create: {
-      authUserId: adminAuthUserId,
       email: 'admin@jobai.com',
       fullName: 'Admin User',
       isAdmin: true,

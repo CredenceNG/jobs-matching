@@ -139,7 +139,7 @@ const generateMockJobs = (filters: JobFilters, page: number): { jobs: JobData[],
     ];
 
     // Filter jobs based on search criteria
-    let filteredJobs = allJobs.filter(job => {
+    const filteredJobs = allJobs.filter(job => {
         // Text search
         if (filters.query) {
             const query = filters.query.toLowerCase();

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if engine with this name already exists
-    const existing = await prisma.aIEngine.findUnique({
+    const existing = await prisma.aIEngine.findFirst({
       where: { name: data.name }
     });
 

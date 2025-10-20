@@ -57,3 +57,10 @@ export async function getCurrentUser() {
   const data = await response.json();
   return data.user;
 }
+
+/**
+ * Get user profile (alias for getCurrentUser)
+ */
+export async function getUserProfile() {
+  return getCurrentUser();
+}

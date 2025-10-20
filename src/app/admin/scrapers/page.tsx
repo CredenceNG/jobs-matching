@@ -142,7 +142,7 @@ export default function ScrapersManagement() {
 
     const calculateSuccessRate = (scraper: ScraperStats) => {
         const total = scraper.successfulScrapes + scraper.failedScrapes;
-        if (total === 0) return 0;
+        if (total === 0) return '0';
         return ((scraper.successfulScrapes / total) * 100).toFixed(1);
     };
 
@@ -216,7 +216,7 @@ export default function ScrapersManagement() {
                                           scrapers.reduce((sum, s) => sum + parseFloat(calculateSuccessRate(s)), 0) /
                                           scrapers.length
                                       ).toFixed(1)
-                                    : 0}
+                                    : '0'}
                                 %
                             </p>
                         </div>
