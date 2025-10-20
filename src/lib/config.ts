@@ -18,11 +18,6 @@ const envSchema = z.object({
     .default("development"),
   NEXT_PUBLIC_APP_URL: z.string().url(),
 
-  // Supabase configuration
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-
   // AI Services
   ANTHROPIC_API_KEY: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
@@ -135,8 +130,6 @@ export const config = {
   isTesting: env.NODE_ENV === "test",
 
   // API endpoints
-  supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseAnonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   appUrl: env.NEXT_PUBLIC_APP_URL,
 
   // AI configuration

@@ -24,13 +24,13 @@ I'm converting an existing React + Vite job search SaaS application to Next.js w
 
 - **Frontend**: Next.js 14+ (App Router)
 - **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL with built-in auth)
+- **Database**: PostgreSQL with Prisma ORM
 - **AI Services**:
   - Anthropic Claude (Sonnet 4.5) for complex reasoning, long context tasks
   - OpenAI (GPT-4o-mini) for cost-effective operations
 - **Job Data**: Web scraping from multiple job boards
 - **Deployment**: Netlify
-- **Auth**: Supabase Auth (for premium users only)
+- **Auth**: JWT-based authentication
 - **File Storage**: Temporary (Netlify Functions tmp directory)
 
 ### Budget Strategy
@@ -47,7 +47,7 @@ I'm converting an existing React + Vite job search SaaS application to Next.js w
 
 ```typescript
 // Use Claude Sonnet 4.5 for initial comprehensive analysis
-// Cache results in Supabase
+// Cache results in database
 // Cost: ~$0.001 per match (first time only)
 ```
 
@@ -135,7 +135,7 @@ I'm converting an existing React + Vite job search SaaS application to Next.js w
 - Scrape jobs from: Indeed, LinkedIn, Glassdoor, RemoteOK
 - Extract: title, company, location, salary, description, requirements, posting date
 - Deduplicate jobs across sources
-- Store in Supabase with metadata
+- Store in PostgreSQL database with metadata
 - Run via Netlify Scheduled Functions (cron)
 - Rate limiting to avoid blocking
 - Error handling for scraper failures
@@ -145,7 +145,7 @@ I'm converting an existing React + Vite job search SaaS application to Next.js w
 
 **Requirements**:
 
-- Supabase Auth integration
+- JWT-based authentication
 - Email/password signup
 - OAuth (Google, GitHub) optional
 - Free tier: Browse, basic search, 2 cover letters/month
@@ -178,7 +178,7 @@ I'm converting an existing React + Vite job search SaaS application to Next.js w
 ```typescript
 // Implement multi-layer caching:
 // 1. In-memory cache (Netlify Functions) - 5 minutes
-// 2. Database cache (Supabase) - 24 hours
+// 2. Database cache (PostgreSQL) - 24 hours
 // 3. CDN cache (Netlify) - Static content
 
 // Cache keys:
@@ -243,7 +243,9 @@ jobai-nextjs/
 │   │   │   ├── scrape/route.ts (cron trigger)
 │   │   │   └── [id]/route.ts
 │   │   ├── auth/
-│   │   │   └── [...supabase]/route.ts
+│   │   │   ├── login/route.ts
+│   │   │   ├── signup/route.ts
+│   │   │   └── logout/route.ts
 │   │   ├── alerts/
 │   │   │   ├── check/route.ts (cron trigger)
 │   │   │   └── send/route.ts
@@ -281,7 +283,7 @@ jobai-nextjs/
 │   │   ├── redis.ts (optional)
 │   │   └── memory.ts
 │   ├── database/
-│   │   ├── supabase.ts
+│   │   ├── prisma.ts
 │   │   ├── queries.ts
 │   │   └── types.ts
 │   ├── email/
@@ -304,9 +306,9 @@ jobai-nextjs/
 │   └── usePremium.ts
 ├── .env.local (gitignored)
 ├── .env.example
-├── supabase/
+├── prisma/
 │   ├── migrations/
-│   └── seed.sql
+│   └── schema.prisma
 ├── next.config.js
 ├── tailwind.config.ts
 └── package.json
@@ -323,20 +325,18 @@ jobai-nextjs/
    - Migrate Tailwind config
    - Setup environment variables
 
-2. **Setup Supabase**
+2. **Setup Database**
 
-   - Create project
-   - Design database schema (users, jobs, matches, searches, alerts)
-   - Setup authentication
-   - Create API client
+   - Create PostgreSQL database
+   - Design Prisma schema (users, jobs, matches, searches, alerts)
+   - Setup JWT authentication
+   - Create Prisma client
 
 3. **Environment Configuration**
 
    ```env
-   # Supabase
-   NEXT_PUBLIC_SUPABASE_URL=
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=
-   SUPABASE_SERVICE_ROLE_KEY=
+   # Database
+   DATABASE_URL=postgresql://user:password@localhost:5432/jobai
 
    # AI Services
    ANTHROPIC_API_KEY=
@@ -395,7 +395,7 @@ jobai-nextjs/
    - LinkedIn scraper (use API if available)
    - Deduplicate logic
    - Error handling and retries
-   - Store in Supabase
+   - Store in PostgreSQL database
 
 9. **Scheduled Scraping**
    - Netlify cron function (every 6 hours)
@@ -406,7 +406,7 @@ jobai-nextjs/
 
 10. **Authentication System**
 
-    - Supabase Auth integration
+    - JWT authentication implementation
     - Login/signup flows
     - Protected routes
     - Session management
@@ -519,7 +519,7 @@ try {
 - Never expose API keys client-side
 - Validate all user inputs
 - Sanitize scraped data
-- Use Supabase Row Level Security
+- Use Prisma transactions for data integrity
 
 ## Specific Implementation Notes
 
@@ -635,7 +635,7 @@ As you implement, use these patterns:
 
 ## Start Implementation
 
-Begin with: "Create the Next.js project structure and Supabase database schema based on the requirements above. Include all necessary types, migration files, and configuration with detailed comments explaining each decision."
+Begin with: "Create the Next.js project structure and Prisma database schema based on the requirements above. Include all necessary types, migration files, and configuration with detailed comments explaining each decision."
 
 ---
 
