@@ -1,0 +1,6 @@
+John Doe
+Software Engineer
+Skills: JavaScript, React, Node.js, Python, C#
+Experience: 3 years of full-stack development
+Location: San Francisco, CA
+Education: BS Computer Science

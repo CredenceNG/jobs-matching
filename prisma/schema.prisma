@@ -1,0 +1,288 @@
+// Prisma Schema for JobAI
+// This is your database schema definition
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum SubscriptionStatus {
+  active
+  cancelled
+  past_due
+  paused
+}
+
+enum TokenTransactionType {
+  purchase
+  spend
+  bonus
+  refund
+}
+
+enum AIFeature {
+  job_match
+  resume_analysis
+  cover_letter
+  interview_prep
+  salary_analysis
+  company_research
+  resume_optimization
+}
+
+// Users table
+model User {
+  id                     String              @id @default(uuid()) @db.Uuid
+  email                  String              @unique @db.VarChar(255)
+  password               String?             @db.VarChar(255)
+  fullName               String?             @map("full_name") @db.VarChar(255)
+  profilePicture         String?             @map("profile_picture")
+  isPremium              Boolean             @default(false) @map("is_premium")
+  subscriptionId         String?             @unique @map("subscription_id") @db.VarChar(255)
+  subscriptionStatus     SubscriptionStatus? @map("subscription_status")
+  subscriptionEndDate    DateTime?           @map("subscription_end_date") @db.Timestamptz
+  subscriptionCreatedAt  DateTime?           @map("subscription_created_at") @db.Timestamptz
+  isAdmin                Boolean             @default(false) @map("is_admin")
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  lastLogin              DateTime?           @map("last_login") @db.Timestamptz
+  deletedAt              DateTime?           @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  tokens                 UserToken?
+  tokenTransactions      TokenTransaction[]
+  tokenPurchases         TokenPurchase[]
+
+  @@map("users")
+}
+
+// User tokens balance
+model UserToken {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @unique @map("user_id") @db.Uuid
+  balance            Int      @default(0)
+  lifetimeEarned     Int      @default(0) @map("lifetime_earned")
+  lifetimePurchased  Int      @default(0) @map("lifetime_purchased")
+  lifetimeSpent      Int      @default(0) @map("lifetime_spent")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_tokens")
+}
+
+// Token transaction history
+model TokenTransaction {
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @map("user_id") @db.Uuid
+  type        TokenTransactionType
+  amount      Int
+  description String?
+  metadata    Json?                @default("{}")
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("token_transactions")
+}
+
+// Token packages for purchase
+model TokenPackage {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(255)
+  description   String?
+  tokens        Int
+  priceCents    Int      @map("price_cents")
+  stripePriceId String?  @unique @map("stripe_price_id") @db.VarChar(255)
+  isPopular     Boolean  @default(false) @map("is_popular")
+  displayOrder  Int      @default(0) @map("display_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  purchases TokenPurchase[]
+
+  @@map("token_packages")
+}
+
+// Token purchase history
+model TokenPurchase {
+  id                    String    @id @default(uuid()) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  packageId             String?   @map("package_id") @db.Uuid
+  tokensPurchased       Int       @map("tokens_purchased")
+  amountCents           Int       @map("amount_cents")
+  stripePaymentIntentId String?   @unique @map("stripe_payment_intent_id") @db.VarChar(255)
+  stripeChargeId        String?   @map("stripe_charge_id") @db.VarChar(255)
+  status                String    @default("pending") @db.VarChar(50)
+  completedAt           DateTime? @map("completed_at") @db.Timestamptz
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package TokenPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@map("token_purchases")
+}
+
+// AI feature costs
+model AIFeatureCost {
+  id                 String    @id @default(uuid()) @db.Uuid
+  feature            AIFeature @unique
+  costTokens         Int       @map("cost_tokens")
+  description        String?
+  averageApiCostUsd  Decimal?  @map("average_api_cost_usd") @db.Decimal(10, 6)
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("ai_feature_costs")
+}
+
+// Dynamic Location Configuration
+model LocationConfig {
+  id                 String   @id @default(uuid()) @db.Uuid
+  region             String   // e.g., 'north_america', 'europe', 'asia'
+  country            String   // e.g., 'Canada', 'United Kingdom'
+  keywords           String[] // e.g., ['canada', 'toronto', 'vancouver']
+  indeedDomain       String   @map("indeed_domain") // e.g., 'ca.indeed.com'
+  linkedinRegion     String   @map("linkedin_region") // e.g., 'Canada'
+  recommendedBoards  String[] @map("recommended_boards") // e.g., ['indeed', 'linkedin', 'jobbank']
+  isActive           Boolean  @default(true) @map("is_active")
+  priority           Int      @default(0) // Higher priority = checked first
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([isActive])
+  @@index([priority(sort: Desc)])
+  @@map("location_configs")
+}
+
+// Jobs Storage - Stores scraped jobs
+model Job {
+  id              String   @id @default(uuid()) @db.Uuid
+  externalId      String   @map("external_id") // ID from source (e.g., Indeed job ID)
+  title           String
+  company         String
+  location        String?
+  description     String   @db.Text
+  salary          String?
+  jobType         String?  @map("job_type") // full-time, part-time, contract
+  remote          Boolean  @default(false)
+  url             String?
+  source          String   // indeed, linkedin, remoteok, etc.
+  postedDate      DateTime? @map("posted_date") @db.Timestamptz
+  scrapedAt       DateTime @default(now()) @map("scraped_at") @db.Timestamptz
+  metadata        Json?    // Additional data specific to source
+
+  @@unique([externalId, source])
+  @@index([source])
+  @@index([postedDate])
+  @@index([scrapedAt])
+  @@map("jobs")
+}
+
+// Scraper Statistics - Track scraper performance
+model ScraperStats {
+  id              String   @id @default(uuid()) @db.Uuid
+  scraperName     String   @map("scraper_name")
+  timestamp       DateTime @default(now()) @db.Timestamptz
+  jobsFound       Int      @map("jobs_found")
+  duration        Int      // milliseconds
+  success         Boolean
+  errorMessage    String?  @map("error_message") @db.Text
+
+  @@index([scraperName])
+  @@index([timestamp])
+  @@index([success])
+  @@map("scraper_stats")
+}
+
+// Scrape Schedule Configuration
+model ScrapeSchedule {
+  id              String   @id @default(uuid()) @db.Uuid
+  frequency       String   // cron expression
+  isActive        Boolean  @default(true) @map("is_active")
+  lastRun         DateTime? @map("last_run") @db.Timestamptz
+  nextRun         DateTime @map("next_run") @db.Timestamptz
+  sourcesToScrape String[] @map("sources_to_scrape")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("scrape_schedules")
+}
+
+// Scrape Run History
+model ScrapeRun {
+  id            String   @id @default(uuid()) @db.Uuid
+  startTime     DateTime @default(now()) @map("start_time") @db.Timestamptz
+  endTime       DateTime? @map("end_time") @db.Timestamptz
+  status        String   // running, success, failed
+  jobsFound     Int      @default(0) @map("jobs_found")
+  sources       String[]
+  errorMessage  String?  @map("error_message") @db.Text
+  logs          Json?
+
+  @@index([startTime])
+  @@index([status])
+  @@map("scrape_runs")
+}
+
+// AI Engine Configuration
+model AIEngine {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   // "OpenAI GPT-4o-mini"
+  provider        String   // "openai" or "anthropic"
+  model           String   // "gpt-4o-mini", "claude-sonnet-4.5"
+  apiKey          String   @map("api_key") // Encrypted
+  costPer1kTokens Decimal  @map("cost_per_1k_tokens") @db.Decimal(10, 6)
+  isActive        Boolean  @default(true) @map("is_active")
+  defaultFor      String[] @map("default_for") // ["resume_parsing", "job_matching"]
+  rateLimit       Int?     @map("rate_limit") // requests per minute
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("ai_engines")
+}
+
+// AI Usage Tracking
+model AIUsage {
+  id              String   @id @default(uuid()) @db.Uuid
+  engineId        String   @map("engine_id") @db.Uuid
+  feature         String   // "resume_parsing", "job_matching", etc.
+  inputTokens     Int      @map("input_tokens")
+  outputTokens    Int      @map("output_tokens")
+  cost            Decimal  @db.Decimal(10, 6)
+  duration        Int      // milliseconds
+  timestamp       DateTime @default(now()) @db.Timestamptz
+  userId          String?  @db.Uuid
+  success         Boolean  @default(true)
+  errorMessage    String?  @map("error_message") @db.Text
+
+  @@index([engineId])
+  @@index([feature])
+  @@index([timestamp])
+  @@index([userId])
+  @@map("ai_usage")
+}
+
+// Cache for API responses
+model Cache {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([expiresAt])
+  @@map("cache")
+}

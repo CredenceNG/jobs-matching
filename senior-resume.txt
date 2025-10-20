@@ -1,0 +1,7 @@
+Jane Smith
+Senior Software Engineer
+Skills: C#, Go, AI, Machine Learning, Data Science
+Experience: 8+ years of senior software development and AI implementation
+Location: Remote
+Education: MS Computer Science, PhD Machine Learning
+Specializations: AI/ML systems, Go microservices, .NET development

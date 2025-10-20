@@ -1,0 +1,14 @@
+# Test outputs and results
+test-results/
+*.log
+*.tmp
+
+# Test data files
+test-data/
+sample-resumes/
+*.pdf
+*.docx
+
+# Environment-specific test configs
+.env.test.local
+test-config.local.js

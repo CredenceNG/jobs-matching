@@ -1,0 +1,40 @@
+JOHN DOE
+Software Developer
+john.doe@email.com | (555) 123-4567 | Chicago, IL
+
+EXPERIENCE
+Senior Software Developer | Tech Company Inc. | 2020-Present
+- Developed web applications using JavaScript, React, and Node.js
+- Led a team of 5 developers on multiple projects
+- Implemented automated testing and CI/CD pipelines
+- Built RESTful APIs and microservices architecture
+
+Software Developer | StartupCorp | 2018-2020
+- Created responsive web interfaces using HTML, CSS, and JavaScript
+- Worked with databases including PostgreSQL and MongoDB
+- Collaborated with cross-functional teams in agile environment
+- Optimized application performance and scalability
+
+SKILLS
+- Programming Languages: JavaScript, TypeScript, Python, Java
+- Frontend: React, Vue.js, HTML5, CSS3, Responsive Design
+- Backend: Node.js, Express.js, RESTful APIs, GraphQL
+- Databases: PostgreSQL, MongoDB, MySQL, Redis
+- Cloud: AWS, Docker, Kubernetes, CI/CD
+- Tools: Git, VS Code, Jira, Slack
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Illinois at Chicago | 2018
+GPA: 3.7/4.0
+
+CERTIFICATIONS
+- AWS Certified Solutions Architect
+- Google Cloud Professional Developer
+- Certified Scrum Master (CSM)
+
+PROJECTS
+E-commerce Platform
+- Built full-stack e-commerce solution using React and Node.js
+- Integrated payment processing and inventory management
+- Deployed on AWS with auto-scaling capabilities
