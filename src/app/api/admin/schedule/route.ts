@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: [
         { isActive: 'desc' },
-        { name: 'asc' }
+        { createdAt: 'desc' }
       ]
     });
 
@@ -75,52 +75,35 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     // Validate required fields
-    if (!data.name || typeof data.name !== 'string') {
+    if (!data.frequency || typeof data.frequency !== 'string') {
       return NextResponse.json(
-        { success: false, error: 'Name is required and must be a string' },
+        { success: false, error: 'Frequency (cron expression) is required and must be a string' },
         { status: 400 }
       );
     }
 
-    if (!data.cronExpression || typeof data.cronExpression !== 'string') {
+    if (!data.sourcesToScrape || !Array.isArray(data.sourcesToScrape) || data.sourcesToScrape.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Cron expression is required and must be a string' },
+        { success: false, error: 'Sources to scrape must be a non-empty array' },
         { status: 400 }
       );
     }
 
-    if (!data.sources || !Array.isArray(data.sources) || data.sources.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Sources must be a non-empty array' },
-        { status: 400 }
-      );
-    }
-
-    // Check if schedule with this name already exists
-    const existing = await prisma.scrapeSchedule.findUnique({
-      where: { name: data.name }
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { success: false, error: 'Schedule with this name already exists' },
-        { status: 409 }
-      );
-    }
+    // Calculate next run time (simplified - assumes frequency is a cron expression)
+    const nextRun = new Date();
+    nextRun.setHours(nextRun.getHours() + 1); // Default: next run in 1 hour
 
     // Create schedule
     const schedule = await prisma.scrapeSchedule.create({
       data: {
-        name: data.name,
-        cronExpression: data.cronExpression,
-        sources: data.sources,
-        locations: data.locations || [],
-        keywords: data.keywords || [],
+        frequency: data.frequency,
+        sourcesToScrape: data.sourcesToScrape,
+        nextRun: nextRun,
         isActive: data.isActive ?? true,
       }
     });
 
-    console.log(`✅ Admin created schedule: ${schedule.name}`);
+    console.log(`✅ Admin created schedule: ${schedule.id}`);
 
     return NextResponse.json({
       success: true,

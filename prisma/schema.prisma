@@ -46,7 +46,10 @@ model User {
   subscriptionId         String?             @unique @map("subscription_id") @db.VarChar(255)
   subscriptionStatus     SubscriptionStatus? @map("subscription_status")
   subscriptionEndDate    DateTime?           @map("subscription_end_date") @db.Timestamptz
+  subscriptionExpiresAt  DateTime?           @map("subscription_expires_at") @db.Timestamptz
   subscriptionCreatedAt  DateTime?           @map("subscription_created_at") @db.Timestamptz
+  stripeCustomerId       String?             @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId   String?             @map("stripe_subscription_id") @db.VarChar(255)
   isAdmin                Boolean             @default(false) @map("is_admin")
   createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz
   updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz
@@ -286,3 +289,18 @@ model Cache {
   @@index([expiresAt])
   @@map("cache")
 }
+
+// Search results cache
+model SearchCache {
+  id        String   @id @default(uuid()) @db.Uuid
+  searchKey String   @unique @map("search_key")
+  jobIds    String[] @map("job_ids")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  hitCount  Int      @default(0) @map("hit_count")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([expiresAt])
+  @@index([searchKey])
+  @@map("search_cache")
+}
+

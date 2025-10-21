@@ -1,0 +1,21 @@
+#!/bin/bash
+# Git pre-commit hook to run type checks and linting before committing
+
+echo "🔍 Running type check..."
+npm run type-check
+
+if [ $? -ne 0 ]; then
+  echo "❌ Type check failed! Fix errors before committing."
+  exit 1
+fi
+
+echo "📝 Running linter..."
+npm run lint
+
+if [ $? -ne 0 ]; then
+  echo "⚠️  Linter warnings found. You can fix with: npm run lint:fix"
+  # Don't exit with error for linter - just warnings
+fi
+
+echo "✅ Pre-commit checks passed!"
+exit 0

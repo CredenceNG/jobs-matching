@@ -72,9 +72,8 @@ export class AIService {
 
       if (!isAnonymous) {
         // Get user's subscription status from database (Prisma/Neon)
-        // Assume userId is authUserId (Supabase Auth ID)
         const user = await prisma.user.findUnique({
-          where: { authUserId: userId },
+          where: { id: userId },
           select: { isPremium: true },
         });
 

@@ -20,13 +20,11 @@ import crypto from 'crypto';
 
 export interface SearchCacheEntry {
   id?: string;
-  search_key: string;
-  search_params: Record<string, any>;
-  job_ids: string[];
-  expires_at: string;
-  hit_count: number;
-  created_at?: string;
-  updated_at?: string;
+  searchKey: string;
+  jobIds: string[];
+  expiresAt: string;
+  hitCount: number;
+  createdAt?: string;
 }
 
 export interface CacheStats {
@@ -59,15 +57,15 @@ export class CacheService {
 
       const data = await prisma.searchCache.findFirst({
         where: {
-          search_key: searchKey,
-          expires_at: {
+          searchKey: searchKey,
+          expiresAt: {
             gt: new Date(),
           },
         },
         select: {
-          job_ids: true,
-          expires_at: true,
-          hit_count: true,
+          jobIds: true,
+          expiresAt: true,
+          hitCount: true,
         },
       });
 
@@ -79,8 +77,8 @@ export class CacheService {
       // Increment hit count
       await this.incrementHitCount(searchKey);
 
-      console.log(`[Cache] ✅ HIT for key: ${searchKey} (${data.job_ids.length} jobs)`);
-      return data.job_ids as string[];
+      console.log(`[Cache] ✅ HIT for key: ${searchKey} (${data.jobIds.length} jobs)`);
+      return data.jobIds as string[];
     } catch (error) {
       console.error('[Cache] Error getting cache:', error);
       return null;
@@ -108,20 +106,18 @@ export class CacheService {
 
       await prisma.searchCache.upsert({
         where: {
-          search_key: searchKey,
+          searchKey: searchKey,
         },
         update: {
-          search_params: searchParams as any,
-          job_ids: jobIds,
-          expires_at: expiresAt,
-          hit_count: 0,
+          jobIds: jobIds,
+          expiresAt: expiresAt,
+          hitCount: 0,
         },
         create: {
-          search_key: searchKey,
-          search_params: searchParams as any,
-          job_ids: jobIds,
-          expires_at: expiresAt,
-          hit_count: 0,
+          searchKey: searchKey,
+          jobIds: jobIds,
+          expiresAt: expiresAt,
+          hitCount: 0,
         },
       });
 
@@ -146,7 +142,7 @@ export class CacheService {
 
       await prisma.searchCache.deleteMany({
         where: {
-          search_key: searchKey,
+          searchKey: searchKey,
         },
       });
 

@@ -11,7 +11,7 @@
  * @description Foundation for all web scraping operations
  */
 
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser, Page } from "puppeteer";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -20,11 +20,13 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 export interface ScraperConfig {
   name: string;
   baseUrl: string;
-  requestDelayMs: number; // Delay between requests to avoid blocking
-  maxRetries: number;
-  timeout: number;
-  headless: boolean;
+  requestDelayMs?: number;
+  maxRetries?: number;
+  timeout?: number;
+  headless?: boolean;
   userAgents?: string[];
+  // Allow additional properties for flexibility
+  [key: string]: any;
 }
 
 export interface ScrapeResult<T> {
@@ -73,12 +75,12 @@ export abstract class BaseScraper<T> {
       this.browser = await puppeteer.launch({
         headless: this.config.headless,
         args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-          '--window-size=1920x1080',
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
+          "--window-size=1920x1080",
         ],
       });
 
@@ -104,19 +106,20 @@ export abstract class BaseScraper<T> {
 
     // Set extra headers to look more like a real browser
     await page.setExtraHTTPHeaders({
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-      'Connection': 'keep-alive',
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      Connection: "keep-alive",
     });
 
     // Block unnecessary resources to speed up scraping
     await page.setRequestInterception(true);
-    page.on('request', (req) => {
+    page.on("request", (req) => {
       const resourceType = req.resourceType();
 
       // Block images, fonts, and media to speed up loading
-      if (['image', 'font', 'media', 'stylesheet'].includes(resourceType)) {
+      if (["image", "font", "media", "stylesheet"].includes(resourceType)) {
         req.abort();
       } else {
         req.continue();
@@ -131,10 +134,10 @@ export abstract class BaseScraper<T> {
    */
   protected getRandomUserAgent(): string {
     const userAgents = this.config.userAgents || [
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
     ];
 
     return userAgents[Math.floor(Math.random() * userAgents.length)];
@@ -155,9 +158,16 @@ export abstract class BaseScraper<T> {
     }
 
     // Check if we've exceeded the limit
-    if (this.rateLimitState.requestCount >= this.rateLimitState.maxRequestsPerWindow) {
+    if (
+      this.rateLimitState.requestCount >=
+      this.rateLimitState.maxRequestsPerWindow
+    ) {
       const waitTime = this.rateLimitState.windowDurationMs - windowElapsed;
-      console.log(`⏳ [${this.config.name}] Rate limit reached. Waiting ${Math.round(waitTime / 1000)}s...`);
+      console.log(
+        `⏳ [${this.config.name}] Rate limit reached. Waiting ${Math.round(
+          waitTime / 1000
+        )}s...`
+      );
       await this.delay(waitTime);
       this.rateLimitState.requestCount = 0;
       this.rateLimitState.windowStart = Date.now();
@@ -170,14 +180,14 @@ export abstract class BaseScraper<T> {
    * Delay execution for specified milliseconds
    */
   protected async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Add random delay between requests to appear more human
    */
   protected async randomDelay(): Promise<void> {
-    const baseDelay = this.config.requestDelayMs;
+    const baseDelay = this.config.requestDelayMs ?? 1000; // Default 1 second
     const randomOffset = Math.random() * 1000; // Add 0-1s random offset
     await this.delay(baseDelay + randomOffset);
   }
@@ -190,25 +200,35 @@ export abstract class BaseScraper<T> {
     operationName: string
   ): Promise<R> {
     let lastError: Error | null = null;
+    const maxRetries = this.config.maxRetries ?? 3; // Default 3 retries
 
-    for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`🔄 [${this.config.name}] ${operationName} (attempt ${attempt}/${this.config.maxRetries})`);
+        console.log(
+          `🔄 [${this.config.name}] ${operationName} (attempt ${attempt}/${maxRetries})`
+        );
         const result = await operation();
         return result;
       } catch (error) {
         lastError = error as Error;
-        console.error(`❌ [${this.config.name}] ${operationName} failed (attempt ${attempt}):`, error);
+        console.error(
+          `❌ [${this.config.name}] ${operationName} failed (attempt ${attempt}):`,
+          error
+        );
 
-        if (attempt < this.config.maxRetries) {
+        if (attempt < maxRetries) {
           const backoffDelay = Math.min(1000 * Math.pow(2, attempt), 10000); // Exponential backoff, max 10s
-          console.log(`⏳ [${this.config.name}] Retrying in ${backoffDelay}ms...`);
+          console.log(
+            `⏳ [${this.config.name}] Retrying in ${backoffDelay}ms...`
+          );
           await this.delay(backoffDelay);
         }
       }
     }
 
-    throw new Error(`${operationName} failed after ${this.config.maxRetries} attempts: ${lastError?.message}`);
+    throw new Error(
+      `${operationName} failed after ${this.config.maxRetries} attempts: ${lastError?.message}`
+    );
   }
 
   /**
@@ -232,8 +252,8 @@ export abstract class BaseScraper<T> {
    * Extract and clean text from HTML element
    */
   protected cleanText(text: string | null | undefined): string {
-    if (!text) return '';
-    return text.trim().replace(/\s+/g, ' ');
+    if (!text) return "";
+    return text.trim().replace(/\s+/g, " ");
   }
 
   /**
@@ -242,7 +262,10 @@ export abstract class BaseScraper<T> {
   protected handleError(error: any, operationName: string): ScrapeResult<T> {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    console.error(`❌ [${this.config.name}] ${operationName} error:`, errorMessage);
+    console.error(
+      `❌ [${this.config.name}] ${operationName} error:`,
+      errorMessage
+    );
 
     return {
       success: false,
@@ -261,13 +284,15 @@ export abstract class BaseScraper<T> {
     duration: number,
     query: string
   ): void {
-    console.log(`
+    console.log(
+      `
 📊 [${this.config.name}] Scraping completed:
    Query: "${query}"
    Items: ${itemsScraped}
    Duration: ${(duration / 1000).toFixed(2)}s
    Rate: ${(itemsScraped / (duration / 1000)).toFixed(2)} items/sec
-    `.trim());
+    `.trim()
+    );
   }
 }
 
@@ -278,15 +303,19 @@ export abstract class BaseScraper<T> {
 /**
  * Generate unique job ID from job details
  */
-export function generateJobId(title: string, company: string, location: string): string {
+export function generateJobId(
+  title: string,
+  company: string,
+  location: string
+): string {
   const combined = `${title}-${company}-${location}`.toLowerCase();
-  const cleaned = combined.replace(/[^a-z0-9]/g, '-');
+  const cleaned = combined.replace(/[^a-z0-9]/g, "-");
 
   // Create a simple hash
   let hash = 0;
   for (let i = 0; i < cleaned.length; i++) {
     const char = cleaned.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
 
@@ -297,13 +326,13 @@ export function generateJobId(title: string, company: string, location: string):
  * Normalize job location string
  */
 export function normalizeLocation(location: string): string {
-  if (!location) return 'Remote';
+  if (!location) return "Remote";
 
   const cleaned = location.trim();
 
   // Handle common remote work patterns
   if (/remote|work from home|wfh|anywhere/i.test(cleaned)) {
-    return 'Remote';
+    return "Remote";
   }
 
   return cleaned;
@@ -348,7 +377,7 @@ export function parseRelativeDate(dateText: string): string {
   }
 
   // Handle "today" or "just posted"
-  if (lowerText.includes('today') || lowerText.includes('just posted')) {
+  if (lowerText.includes("today") || lowerText.includes("just posted")) {
     return now.toISOString();
   }
 

@@ -23,29 +23,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    // Get query parameters for filtering
-    const { searchParams } = new URL(req.url);
-    const isActive = searchParams.get('isActive');
-
-    // Build where clause
-    const where: any = {};
-    if (isActive !== null) {
-      where.isActive = isActive === 'true';
-    }
-
-    // Fetch scrapers with their latest statistics
+    // Fetch scraper statistics grouped by scraper name
     const scrapers = await prisma.scraperStats.findMany({
-      where,
       orderBy: [
-        { isActive: 'desc' },
-        { name: 'asc' }
+        { timestamp: 'desc' },
+        { scraperName: 'asc' }
       ]
     });
 
+    // Group by scraper name to get unique scrapers
+    const uniqueScrapers = Array.from(
+      new Map(scrapers.map(s => [s.scraperName, s])).values()
+    );
+
     return NextResponse.json({
       success: true,
-      scrapers,
-      total: scrapers.length
+      scrapers: uniqueScrapers,
+      total: uniqueScrapers.length
     });
 
   } catch (error) {
@@ -57,7 +51,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/admin/scrapers - Create new scraper
+// POST /api/admin/scrapers - Scrapers are auto-created, this endpoint is not used
 export async function POST(req: NextRequest) {
   try {
     // Verify admin authentication
@@ -71,65 +65,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    // Parse and validate request body
-    const data = await req.json();
-
-    // Validate required fields
-    if (!data.name || typeof data.name !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'Name is required and must be a string' },
-        { status: 400 }
-      );
-    }
-
-    if (!data.source || typeof data.source !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'Source is required and must be a string' },
-        { status: 400 }
-      );
-    }
-
-    // Check if scraper with this name or source already exists
-    const existing = await prisma.scraperStats.findFirst({
-      where: {
-        OR: [
-          { name: data.name },
-          { source: data.source }
-        ]
-      }
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { success: false, error: 'Scraper with this name or source already exists' },
-        { status: 409 }
-      );
-    }
-
-    // Create scraper with default values
-    const scraper = await prisma.scraperStats.create({
-      data: {
-        name: data.name,
-        source: data.source,
-        isActive: data.isActive ?? true,
-        totalJobs: 0,
-        successfulScrapes: 0,
-        failedScrapes: 0,
-        averageDuration: 0,
-      }
-    });
-
-    console.log(`✅ Admin created scraper: ${scraper.name}`);
-
+    // Scrapers are automatically created when scraping runs
+    // This endpoint returns information about how to manage scrapers
     return NextResponse.json({
       success: true,
-      scraper
-    }, { status: 201 });
+      message: 'Scrapers are automatically created when scraping runs occur',
+      info: {
+        note: 'Scraper statistics are read-only and tracked automatically',
+        how_to_configure: 'Use /api/admin/schedule endpoints to configure scraping schedules'
+      }
+    }, { status: 200 });
 
   } catch (error) {
-    console.error('Error creating scraper:', error);
+    console.error('Error in scrapers POST:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create scraper' },
+      { success: false, error: 'Failed to process request' },
       { status: 500 }
     );
   }

@@ -72,7 +72,7 @@ export class ScrapingLogService {
         metadata: log.metadata || {},
       };
 
-      const result = await prisma.scrapingLog.create({
+      const result = await prisma.scrapeRun.create({
         data: logData,
       });
 
@@ -97,7 +97,7 @@ export class ScrapingLogService {
    */
   async getRecentLogs(limit: number = 100, source?: string): Promise<ScrapingLog[]> {
     try {
-      const logs = await prisma.scrapingLog.findMany({
+      const logs = await prisma.scrapeRun.findMany({
         where: source ? { source } : undefined,
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -136,7 +136,7 @@ export class ScrapingLogService {
     source?: string
   ): Promise<ScrapingLog[]> {
     try {
-      const logs = await prisma.scrapingLog.findMany({
+      const logs = await prisma.scrapeRun.findMany({
         where: {
           createdAt: {
             gte: startDate,
@@ -178,7 +178,7 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursBack);
 
-      const logs = await prisma.scrapingLog.findMany({
+      const logs = await prisma.scrapeRun.findMany({
         where: {
           status: 'error',
           createdAt: {
@@ -219,7 +219,7 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursBack);
 
-      const logs = await prisma.scrapingLog.findMany({
+      const logs = await prisma.scrapeRun.findMany({
         where: {
           createdAt: {
             gte: cutoffDate,
@@ -246,10 +246,10 @@ export class ScrapingLogService {
       const failedScrapes = logs.filter((l) => l.status === 'error').length;
       const successRate = (successfulScrapes / totalScrapes) * 100;
 
-      const totalItemsFound = logs.reduce((sum, log) => sum + log.itemsFound, 0);
-      const totalItemsStored = logs.reduce((sum, log) => sum + log.itemsStored, 0);
+      const totalItemsFound = logs.reduce((sum: number, log: any) => sum + log.itemsFound, 0);
+      const totalItemsStored = logs.reduce((sum: number, log: any) => sum + log.itemsStored, 0);
       const avgDuration =
-        logs.reduce((sum, log) => sum + log.durationMs, 0) / totalScrapes;
+        logs.reduce((sum: number, log: any) => sum + log.durationMs, 0) / totalScrapes;
 
       // Group by source
       const scrapesBySource: Record<string, {
@@ -259,7 +259,7 @@ export class ScrapingLogService {
         items_found: number;
       }> = {};
 
-      logs.forEach((log) => {
+      logs.forEach((log: any) => {
         if (!scrapesBySource[log.source]) {
           scrapesBySource[log.source] = {
             total: 0,
@@ -333,7 +333,7 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursBack);
 
-      const logs = await prisma.scrapingLog.findMany({
+      const logs = await prisma.scrapeRun.findMany({
         where: {
           source,
           createdAt: {
@@ -396,7 +396,7 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-      const result = await prisma.scrapingLog.deleteMany({
+      const result = await prisma.scrapeRun.deleteMany({
         where: {
           createdAt: {
             lt: cutoffDate,

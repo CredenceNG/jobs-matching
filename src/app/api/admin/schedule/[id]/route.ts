@@ -85,34 +85,18 @@ export async function PUT(
     // Build update data (only include provided fields)
     const updateData: any = {};
 
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.cronExpression !== undefined) updateData.cronExpression = data.cronExpression;
-    if (data.sources !== undefined) {
-      if (!Array.isArray(data.sources) || data.sources.length === 0) {
+    if (data.frequency !== undefined) updateData.frequency = data.frequency;
+    if (data.sourcesToScrape !== undefined) {
+      if (!Array.isArray(data.sourcesToScrape) || data.sourcesToScrape.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'Sources must be a non-empty array' },
+          { success: false, error: 'Sources to scrape must be a non-empty array' },
           { status: 400 }
         );
       }
-      updateData.sources = data.sources;
+      updateData.sourcesToScrape = data.sourcesToScrape;
     }
-    if (data.locations !== undefined) {
-      if (!Array.isArray(data.locations)) {
-        return NextResponse.json(
-          { success: false, error: 'Locations must be an array' },
-          { status: 400 }
-        );
-      }
-      updateData.locations = data.locations;
-    }
-    if (data.keywords !== undefined) {
-      if (!Array.isArray(data.keywords)) {
-        return NextResponse.json(
-          { success: false, error: 'Keywords must be an array' },
-          { status: 400 }
-        );
-      }
-      updateData.keywords = data.keywords;
+    if (data.nextRun !== undefined) {
+      updateData.nextRun = new Date(data.nextRun);
     }
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
@@ -122,7 +106,7 @@ export async function PUT(
       data: updateData
     });
 
-    console.log(`✅ Admin updated schedule: ${schedule.name}`);
+    console.log(`✅ Admin updated schedule: ${schedule.id}`);
 
     return NextResponse.json({
       success: true,
@@ -172,7 +156,7 @@ export async function DELETE(
       where: { id: params.id }
     });
 
-    console.log(`✅ Admin deleted schedule: ${existing.name}`);
+    console.log(`✅ Admin deleted schedule: ${existing.id}`);
 
     return NextResponse.json({
       success: true,

@@ -91,9 +91,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // Scraper statistics
-      prisma.scraperStats.count({
-        where: { isActive: true }
-      }),
+      prisma.scraperStats.count(),
 
       // Scrape run statistics
       prisma.scrapeRun.count(),

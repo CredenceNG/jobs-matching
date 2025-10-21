@@ -1,14 +1,15 @@
 /**
  * Admin API: Individual Scraper Operations
  *
- * GET, PUT, DELETE operations for a specific scraper
+ * GET - Get scraper statistics (read-only)
+ * PUT, DELETE - Not supported (statistics are read-only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/auth/jwt';
 
-// GET /api/admin/scrapers/[id] - Get single scraper
+// GET /api/admin/scrapers/[id] - Get single scraper statistics
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -31,7 +32,7 @@ export async function GET(
 
     if (!scraper) {
       return NextResponse.json(
-        { success: false, error: 'Scraper not found' },
+        { success: false, error: 'Scraper statistics not found' },
         { status: 404 }
       );
     }
@@ -50,7 +51,7 @@ export async function GET(
   }
 }
 
-// PUT /api/admin/scrapers/[id] - Update scraper
+// PUT /api/admin/scrapers/[id] - Not supported
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -67,51 +68,25 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    // Check if scraper exists
-    const existing = await prisma.scraperStats.findUnique({
-      where: { id: params.id }
-    });
-
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Scraper not found' },
-        { status: 404 }
-      );
-    }
-
-    // Parse request body
-    const data = await req.json();
-
-    // Build update data (only include provided fields)
-    const updateData: any = {};
-
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.source !== undefined) updateData.source = data.source;
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-
-    // Update scraper
-    const scraper = await prisma.scraperStats.update({
-      where: { id: params.id },
-      data: updateData
-    });
-
-    console.log(`✅ Admin updated scraper: ${scraper.name}`);
-
-    return NextResponse.json({
-      success: true,
-      scraper
-    });
+    // ScraperStats is read-only, no updates allowed
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Scraper statistics are read-only and managed automatically by the scraping system'
+      },
+      { status: 400 }
+    );
 
   } catch (error) {
-    console.error('Error updating scraper:', error);
+    console.error('Error in scraper update:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update scraper' },
+      { success: false, error: 'Failed to process request' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/admin/scrapers/[id] - Delete scraper
+// DELETE /api/admin/scrapers/[id] - Not supported
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -128,34 +103,19 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    // Check if scraper exists
-    const existing = await prisma.scraperStats.findUnique({
-      where: { id: params.id }
-    });
-
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Scraper not found' },
-        { status: 404 }
-      );
-    }
-
-    // Delete scraper
-    await prisma.scraperStats.delete({
-      where: { id: params.id }
-    });
-
-    console.log(`✅ Admin deleted scraper: ${existing.name}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Scraper deleted successfully'
-    });
+    // ScraperStats is read-only, no deletions allowed
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Scraper statistics are read-only and managed automatically by the scraping system'
+      },
+      { status: 400 }
+    );
 
   } catch (error) {
-    console.error('Error deleting scraper:', error);
+    console.error('Error in scraper delete:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete scraper' },
+      { success: false, error: 'Failed to process request' },
       { status: 500 }
     );
   }

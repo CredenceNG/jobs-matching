@@ -25,9 +25,10 @@ export async function GET() {
                 id: true,
                 email: true,
                 fullName: true,
-                stripeSubscriptionId: true,
-                stripeCustomerId: true,
-                subscriptionExpiresAt: true,
+                subscriptionId: true,
+                subscriptionStatus: true,
+                subscriptionEndDate: true,
+                subscriptionCreatedAt: true,
                 createdAt: true,
             },
             orderBy: { createdAt: 'desc' }
@@ -39,10 +40,10 @@ export async function GET() {
             user_id: user.id,
             user_email: user.email || 'Unknown',
             user_name: user.fullName,
-            status: 'active',
-            stripe_subscription_id: user.stripeSubscriptionId,
-            stripe_customer_id: user.stripeCustomerId,
-            current_period_end: user.subscriptionExpiresAt,
+            status: user.subscriptionStatus || 'active',
+            subscription_id: user.subscriptionId,
+            current_period_end: user.subscriptionEndDate,
+            subscription_created_at: user.subscriptionCreatedAt,
             created_at: user.createdAt,
         }));
 

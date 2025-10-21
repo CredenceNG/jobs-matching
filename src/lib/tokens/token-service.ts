@@ -138,12 +138,12 @@ export class TokenService {
     /**
      * Get balance by auth user ID (for API endpoints)
      *
-     * @param authUserId - Supabase auth user ID
+     * @param userId - User's database UUID
      * @returns Promise<number> - Current token balance
      */
-    static async getBalanceByAuthUserId(authUserId: string): Promise<number> {
+    static async getBalanceByUserId(authUserId: string): Promise<number> {
         const user = await prisma.user.findUnique({
-            where: { authUserId },
+            where: { id: userId },
             include: { tokens: true },
         });
 
@@ -198,12 +198,12 @@ export class TokenService {
     /**
      * Get full token balance info by auth user ID
      *
-     * @param authUserId - Supabase auth user ID
+     * @param userId - User's database UUID
      * @returns Promise<TokenBalance>
      */
-    static async getBalanceInfoByAuthUserId(authUserId: string): Promise<TokenBalance> {
+    static async getBalanceInfoByUserId(authUserId: string): Promise<TokenBalance> {
         const user = await prisma.user.findUnique({
-            where: { authUserId },
+            where: { id: userId },
             include: { tokens: true },
         });
 
@@ -248,12 +248,12 @@ export class TokenService {
     /**
      * Check if user has unlimited tokens by auth user ID
      *
-     * @param authUserId - Supabase auth user ID
+     * @param userId - User's database UUID
      * @returns Promise<boolean>
      */
-    static async hasUnlimitedTokensByAuthUserId(authUserId: string): Promise<boolean> {
+    static async hasUnlimitedTokensByUserId(authUserId: string): Promise<boolean> {
         const user = await prisma.user.findUnique({
-            where: { authUserId },
+            where: { id: userId },
             select: { isPremium: true },
         });
 
@@ -370,18 +370,18 @@ export class TokenService {
     }
 
     /**
-     * Check if user can afford a feature by auth user ID
+     * Check if user can afford a feature by user ID
      *
-     * @param authUserId - Supabase auth user ID
+     * @param userId - User's database UUID
      * @param featureKey - Feature identifier
      * @returns Promise<AffordabilityCheck>
      */
-    static async canAffordFeatureByAuthUserId(
-        authUserId: string,
+    static async canAffordFeatureByUserId(
+        userId: string,
         featureKey: string
     ): Promise<AffordabilityCheck> {
         const user = await prisma.user.findUnique({
-            where: { authUserId },
+            where: { id: userId },
             include: { tokens: true },
         });
 
@@ -390,6 +390,13 @@ export class TokenService {
         }
 
         return this.canAffordFeature(user.id, featureKey);
+    }
+
+    /**
+     * Alias for backward compatibility
+     */
+    static async canAfford(userId: string, feature: string): Promise<AffordabilityCheck> {
+        return this.canAffordFeatureByUserId(userId, feature);
     }
 
     /**
@@ -481,18 +488,18 @@ export class TokenService {
     /**
      * Deduct tokens by auth user ID
      *
-     * @param authUserId - Supabase auth user ID
+     * @param userId - User's database UUID
      * @param featureKey - Feature identifier
      * @param metadata - Optional metadata
      * @returns Promise<DeductionResult>
      */
-    static async deductTokensByAuthUserId(
+    static async deductTokensByUserId(
         authUserId: string,
         featureKey: string,
         metadata?: Record<string, any>
     ): Promise<DeductionResult> {
         const user = await prisma.user.findUnique({
-            where: { authUserId },
+            where: { id: userId },
             select: { id: true },
         });
 
@@ -603,16 +610,16 @@ export class TokenService {
     /**
      * Get transaction history by auth user ID
      *
-     * @param authUserId - Supabase auth user ID
+     * @param userId - User's database UUID
      * @param limit - Number of transactions to fetch
      * @returns Promise<TokenTransaction[]>
      */
-    static async getTransactionHistoryByAuthUserId(
+    static async getTransactionHistoryByUserId(
         authUserId: string,
         limit: number = 50
     ): Promise<TokenTransaction[]> {
         const user = await prisma.user.findUnique({
-            where: { authUserId },
+            where: { id: userId },
             select: { id: true },
         });
 

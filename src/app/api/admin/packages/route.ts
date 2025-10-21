@@ -23,7 +23,7 @@ export async function GET() {
         }
 
         const packages = await prisma.tokenPackage.findMany({
-            orderBy: { sortOrder: 'asc' }
+            orderBy: { displayOrder: 'asc' }
         });
 
         return NextResponse.json({ packages });
@@ -52,15 +52,13 @@ export async function POST(request: NextRequest) {
 
         const data = await prisma.tokenPackage.create({
             data: {
-                tier: body.tier,
                 name: body.name,
+                description: body.description,
                 tokens: body.tokens,
                 priceCents: body.price_cents,
-                discountPercentage: body.discount_percentage,
-                popular: body.popular,
-                bestValue: body.best_value,
-                active: body.active,
-                sortOrder: body.sort_order,
+                isPopular: body.is_popular,
+                displayOrder: body.display_order,
+                isActive: body.is_active !== false,
             }
         });
 
@@ -91,15 +89,13 @@ export async function PUT(request: NextRequest) {
         const data = await prisma.tokenPackage.update({
             where: { id: body.id },
             data: {
-                tier: body.tier,
                 name: body.name,
+                description: body.description,
                 tokens: body.tokens,
                 priceCents: body.price_cents,
-                discountPercentage: body.discount_percentage,
-                popular: body.popular,
-                bestValue: body.best_value,
-                active: body.active,
-                sortOrder: body.sort_order,
+                isPopular: body.is_popular,
+                displayOrder: body.display_order,
+                isActive: body.is_active,
             }
         });
 
