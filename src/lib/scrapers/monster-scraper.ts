@@ -110,7 +110,7 @@ export class MonsterScraper extends BaseScraper<MonsterJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [Monster] URL: ${url}`);
 
-    const browser = await this.launchBrowser();
+    const browser = await this.getBrowser();
 
     try {
       const page = await browser.newPage();

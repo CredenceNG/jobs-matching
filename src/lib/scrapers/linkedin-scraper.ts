@@ -141,7 +141,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [LinkedIn] URL: ${url}`);
 
-    const browser = await this.launchBrowser({
+    const browser = await this.getBrowser({
       headless: 'new',
       args: [
         '--no-sandbox',

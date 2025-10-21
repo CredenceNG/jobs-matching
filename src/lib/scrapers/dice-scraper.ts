@@ -119,7 +119,7 @@ export class DiceScraper extends BaseScraper<DiceJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [Dice] URL: ${url}`);
 
-    const browser = await this.launchBrowser();
+    const browser = await this.getBrowser();
 
     try {
       const page = await browser.newPage();

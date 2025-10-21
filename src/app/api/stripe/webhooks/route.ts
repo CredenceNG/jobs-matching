@@ -125,6 +125,7 @@ async function handleSubscriptionCreated(event: any) {
                 await prisma.user.update({
                     where: { id: user.id },
                     data: {
+        ...(scheduleData as any),
                         subscriptionStatus: 'active',
                         isPremium: true,
                         subscriptionId: subscriptionId,
@@ -188,6 +189,7 @@ async function handleSubscriptionUpdated(event: any) {
             await prisma.user.update({
                 where: { id: user.id },
                 data: {
+        ...(scheduleData as any),
                     subscriptionStatus: subscriptionStatus,
                     subscriptionEndDate: subscriptionEndDate,
                     updatedAt: new Date(),
@@ -218,6 +220,7 @@ async function handleSubscriptionDeleted(event: any) {
             await prisma.user.updateMany({
                 where: { subscriptionId: subscriptionId },
                 data: {
+        ...(scheduleData as any),
                     subscriptionStatus: 'cancelled',
                     isPremium: false,
                     subscriptionEndDate: null,
@@ -271,7 +274,7 @@ async function handlePaymentSucceeded(event: any) {
                     timestamp: new Date(),
                     success: true,
                     errorMessage: null,
-                },
+                } as any,
             });
         } catch (logError) {
             console.error('Error logging payment:', logError);
@@ -282,6 +285,7 @@ async function handlePaymentSucceeded(event: any) {
             await prisma.user.update({
                 where: { id: user.id },
                 data: {
+        ...(scheduleData as any),
                     subscriptionStatus: 'active',
                         isPremium: true,
                     updatedAt: new Date(),
@@ -332,7 +336,7 @@ async function handlePaymentFailed(event: any) {
                     timestamp: new Date(),
                     success: false,
                     errorMessage: 'Payment failed',
-                },
+                } as any,
             });
         } catch (logError) {
             console.error('Error logging payment failure:', logError);
@@ -410,6 +414,7 @@ async function handleTokenPurchaseSucceeded(event: any) {
             // Initialize if doesn't exist
             await prisma.userToken.create({
                 data: {
+        ...(scheduleData as any),
                     userId: userId,
                     balance: tokens,
                     lifetimePurchased: tokens,
@@ -420,6 +425,7 @@ async function handleTokenPurchaseSucceeded(event: any) {
             await prisma.userToken.update({
                 where: { userId: userId },
                 data: {
+        ...(scheduleData as any),
                     balance: currentTokens.balance + tokens,
                     lifetimePurchased: currentTokens.lifetimePurchased + tokens,
                 },
@@ -440,13 +446,14 @@ async function handleTokenPurchaseSucceeded(event: any) {
                     package_id: packageId,
                     amount_cents: paymentIntent.amount
                 },
-            },
+            } as any,
         });
 
         // Update purchase record
         await prisma.tokenPurchase.updateMany({
             where: { stripePaymentIntentId: paymentIntent.id },
             data: {
+        ...(scheduleData as any),
                 status: 'completed',
                 stripeChargeId: paymentIntent.latest_charge,
                 completedAt: new Date(),
@@ -473,6 +480,7 @@ async function handleTokenPurchaseFailed(event: any) {
         await prisma.tokenPurchase.updateMany({
             where: { stripePaymentIntentId: paymentIntent.id },
             data: {
+        ...(scheduleData as any),
                 status: 'failed',
             },
         });

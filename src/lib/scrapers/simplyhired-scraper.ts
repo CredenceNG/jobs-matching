@@ -111,7 +111,7 @@ export class SimplyHiredScraper extends BaseScraper<SimplyHiredJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [SimplyHired] URL: ${url}`);
 
-    const browser = await this.launchBrowser();
+    const browser = await this.getBrowser();
 
     try {
       const page = await browser.newPage();

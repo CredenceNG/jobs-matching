@@ -119,7 +119,7 @@ export class StackOverflowScraper extends BaseScraper<StackOverflowJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [StackOverflow] URL: ${url}`);
 
-    const browser = await this.launchBrowser();
+    const browser = await this.getBrowser();
 
     try {
       const page = await browser.newPage();

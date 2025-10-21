@@ -117,7 +117,7 @@ export class CareerBuilderScraper extends BaseScraper<CareerBuilderJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [CareerBuilder] URL: ${url}`);
 
-    const browser = await this.launchBrowser();
+    const browser = await this.getBrowser();
 
     try {
       const page = await browser.newPage();
