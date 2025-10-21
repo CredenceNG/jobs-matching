@@ -89,13 +89,10 @@ export async function PUT(
     if (data.provider !== undefined) updateData.provider = data.provider;
     if (data.model !== undefined) updateData.model = data.model;
     if (data.apiKey !== undefined) updateData.apiKey = data.apiKey;
-    if (data.baseUrl !== undefined) updateData.baseUrl = data.baseUrl;
-    if (data.maxTokens !== undefined) updateData.maxTokens = data.maxTokens;
-    if (data.temperature !== undefined) updateData.temperature = data.temperature;
-    if (data.costPer1kTokensInput !== undefined) updateData.costPer1kTokensInput = data.costPer1kTokensInput;
-    if (data.costPer1kTokensOutput !== undefined) updateData.costPer1kTokensOutput = data.costPer1kTokensOutput;
+    if (data.costPer1kTokens !== undefined) updateData.costPer1kTokens = data.costPer1kTokens;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
-    if (data.config !== undefined) updateData.config = data.config;
+    if (data.defaultFor !== undefined) updateData.defaultFor = data.defaultFor;
+    if (data.rateLimit !== undefined) updateData.rateLimit = data.rateLimit;
 
     // Update AI engine
     const engine = await prisma.aIEngine.update({

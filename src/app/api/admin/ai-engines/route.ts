@@ -119,14 +119,11 @@ export async function POST(req: NextRequest) {
         name: data.name,
         provider: data.provider,
         model: data.model,
-        apiKey: data.apiKey || null,
-        baseUrl: data.baseUrl || null,
-        maxTokens: data.maxTokens || 4096,
-        temperature: data.temperature ?? 0.7,
-        costPer1kTokensInput: data.costPer1kTokensInput || 0,
-        costPer1kTokensOutput: data.costPer1kTokensOutput || 0,
+        apiKey: data.apiKey || '',
+        costPer1kTokens: data.costPer1kTokens || 0,
         isActive: data.isActive ?? true,
-        config: data.config || {},
+        defaultFor: data.defaultFor || [],
+        rateLimit: data.rateLimit || null,
       }
     });
 

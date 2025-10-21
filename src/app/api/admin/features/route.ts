@@ -22,10 +22,10 @@ export async function GET() {
             );
         }
 
-        const features = await prisma.featureCost.findMany({
+        const features = await prisma.aIFeatureCost.findMany({
             orderBy: [
-                { category: 'asc' },
-                { tokenCost: 'desc' }
+                { feature: 'asc' },
+                { costTokens: 'desc' }
             ]
         });
 
@@ -53,14 +53,13 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
 
-        const data = await prisma.featureCost.create({
+        const data = await prisma.aIFeatureCost.create({
             data: {
-                featureKey: body.feature_key,
-                featureName: body.feature_name,
-                tokenCost: body.token_cost,
+                feature: body.feature,
+                costTokens: body.cost_tokens || body.token_cost || 0,
                 description: body.description,
-                category: body.category,
-                active: body.active,
+                averageApiCostUsd: body.average_api_cost_usd,
+                isActive: body.active ?? body.is_active ?? true,
             }
         });
 
@@ -88,15 +87,13 @@ export async function PUT(request: NextRequest) {
 
         const body = await request.json();
 
-        const data = await prisma.featureCost.update({
-            where: { featureKey: body.feature_key },
+        const data = await prisma.aIFeatureCost.update({
+            where: { feature: body.feature },
             data: {
-                featureName: body.feature_name,
-                tokenCost: body.token_cost,
+                costTokens: body.cost_tokens || body.token_cost,
                 description: body.description,
-                category: body.category,
-                active: body.active,
-                updatedAt: new Date(),
+                averageApiCostUsd: body.average_api_cost_usd,
+                isActive: body.active ?? body.is_active,
             }
         });
 
@@ -132,8 +129,8 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        await prisma.featureCost.delete({
-            where: { featureKey }
+        await prisma.aIFeatureCost.delete({
+            where: { feature: featureKey }
         });
 
         return NextResponse.json({ success: true });
