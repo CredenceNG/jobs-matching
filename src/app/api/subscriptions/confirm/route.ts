@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-12-18.acacia',
+    apiVersion: '2024-06-20',
 });
 
 export async function POST(request: NextRequest) {
@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
             where: { id: user.id },
             select: {
                 isPremium: true,
-                stripeSubscriptionId: true
+                subscriptionId: true
             }
         });
 
-        if (existingSubscription?.stripeSubscriptionId === subscription.id) {
+        if (existingSubscription?.subscriptionId === subscription.id) {
             console.log('🟡 [Subscription Confirm] Subscription already activated');
             return NextResponse.json({
                 success: true,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
             where: { id: user.id },
             data: {
                 isPremium: true,
-                stripeSubscriptionId: subscription.id,
+                subscriptionId: subscription.id,
                 stripeCustomerId: session.customer as string,
                 subscriptionExpiresAt: new Date(subscription.current_period_end * 1000),
                 updatedAt: new Date()

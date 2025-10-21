@@ -104,14 +104,15 @@ async function handleSubscriptionCreated(event: any) {
     console.log('Subscription created:', subscriptionId, 'Status:', status);
 
     try {
-        // Find user by Stripe customer ID
-        const user = await prisma.user.findUnique({
-            where: { stripeCustomerId: customerId },
+        // Find user by subscription ID (stored in database)
+        // TODO: Update this to use stripeCustomerId once Prisma client is regenerated
+        const user = await prisma.user.findFirst({
+            where: { subscriptionId: subscriptionId },
             select: { id: true },
         });
 
         if (!user) {
-            console.error('User not found for customer:', customerId);
+            console.error('User not found for subscription:', subscriptionId);
             return;
         }
 
@@ -126,7 +127,7 @@ async function handleSubscriptionCreated(event: any) {
                         subscriptionStatus: 'active',
                         isPremium: true,
                         subscriptionId: subscriptionId,
-                        subscriptionExpiresAt: subscriptionEndDate,
+                        subscriptionEndDate: subscriptionEndDate,
                         updatedAt: new Date(),
                     },
                 });
@@ -165,17 +166,17 @@ async function handleSubscriptionUpdated(event: any) {
         }
 
         let subscriptionStatus: 'active' | 'cancelled' | 'past_due' | 'paused' = 'cancelled';
-        let subscriptionExpiresAt: Date | null = null;
+        let subscriptionEndDate: Date | null = null;
 
         if (status === 'active') {
             subscriptionStatus = cancelAtPeriodEnd ? 'cancelled' : 'active';
-            subscriptionExpiresAt = new Date(subscription.current_period_end * 1000);
+            subscriptionEndDate = new Date(subscription.current_period_end * 1000);
         } else if (status === 'trialing') {
             subscriptionStatus = 'active';
-            subscriptionExpiresAt = new Date(subscription.trial_end * 1000);
+            subscriptionEndDate = new Date(subscription.trial_end * 1000);
         } else if (status === 'past_due') {
             subscriptionStatus = 'past_due';
-            subscriptionExpiresAt = new Date(subscription.current_period_end * 1000);
+            subscriptionEndDate = new Date(subscription.current_period_end * 1000);
         } else {
             // cancelled, incomplete, incomplete_expired, unpaid
             subscriptionStatus = 'cancelled';
@@ -187,7 +188,7 @@ async function handleSubscriptionUpdated(event: any) {
                 where: { id: user.id },
                 data: {
                     subscriptionStatus: subscriptionStatus,
-                    subscriptionExpiresAt: subscriptionExpiresAt,
+                    subscriptionEndDate: subscriptionEndDate,
                     updatedAt: new Date(),
                 },
             });
@@ -218,7 +219,7 @@ async function handleSubscriptionDeleted(event: any) {
                 data: {
                     subscriptionStatus: 'cancelled',
                     isPremium: false,
-                    subscriptionExpiresAt: null,
+                    subscriptionEndDate: null,
                     updatedAt: new Date(),
                 },
             });

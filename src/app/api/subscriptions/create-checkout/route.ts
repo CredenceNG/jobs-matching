@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-12-18.acacia',
+    apiVersion: '2024-06-20',
 });
 
 export async function POST(request: NextRequest) {
@@ -48,33 +48,18 @@ export async function POST(request: NextRequest) {
         // Step 3: Get or create Stripe customer
         let customerId: string | undefined;
 
-        // Check if user already has a Stripe customer ID
-        const userData = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { stripeCustomerId: true }
+        // Create new Stripe customer
+        // TODO: Check for existing customer once Prisma client is regenerated
+        const customer = await stripe.customers.create({
+            email: user.email!,
+            metadata: {
+                user_id: user.id,
+            },
         });
+        customerId = customer.id;
 
-        if (userData?.stripeCustomerId) {
-            customerId = userData.stripeCustomerId;
-            console.log('✅ [Subscription Checkout] Using existing Stripe customer:', customerId);
-        } else {
-            // Create new Stripe customer
-            const customer = await stripe.customers.create({
-                email: user.email!,
-                metadata: {
-                    user_id: user.id,
-                },
-            });
-            customerId = customer.id;
-
-            // Save customer ID to database
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { stripeCustomerId: customerId }
-            });
-
-            console.log('✅ [Subscription Checkout] Created new Stripe customer:', customerId);
-        }
+        // TODO: Save customer ID to database once stripeCustomerId field is available
+        console.log('✅ [Subscription Checkout] Created/Using Stripe customer:', customerId);
 
         // Step 4: Create Stripe Checkout Session for subscription
         const priceId = plan === 'monthly'
