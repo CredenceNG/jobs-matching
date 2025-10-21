@@ -54,6 +54,7 @@ export interface WorkExperience {
   isCurrent: boolean;
   description: string[];
   achievements?: string[];
+  responsibilities?: string[];
 }
 
 export interface Education {
@@ -94,6 +95,7 @@ export interface Project {
   startDate: Date;
   endDate?: Date;
   url?: string;
+  link?: string; // alias for url
   github?: string;
   achievements?: string[];
 }
