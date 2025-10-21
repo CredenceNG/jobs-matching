@@ -87,6 +87,7 @@ export class SimplyHiredScraper extends BaseScraper<SimplyHiredJob> {
         data: jobs,
         itemsScraped: jobs.length,
         duration,
+        source: 'simplyhired',
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -98,6 +99,7 @@ export class SimplyHiredScraper extends BaseScraper<SimplyHiredJob> {
         error: error instanceof Error ? error.message : 'Unknown error',
         itemsScraped: jobs.length,
         duration,
+        source: 'simplyhired',
       };
     }
   }

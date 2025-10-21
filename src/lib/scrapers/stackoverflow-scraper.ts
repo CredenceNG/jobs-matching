@@ -95,6 +95,7 @@ export class StackOverflowScraper extends BaseScraper<StackOverflowJob> {
         data: jobs,
         itemsScraped: jobs.length,
         duration,
+        source: 'stackoverflow',
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -106,6 +107,7 @@ export class StackOverflowScraper extends BaseScraper<StackOverflowJob> {
         error: error instanceof Error ? error.message : 'Unknown error',
         itemsScraped: jobs.length,
         duration,
+        source: 'stackoverflow',
       };
     }
   }

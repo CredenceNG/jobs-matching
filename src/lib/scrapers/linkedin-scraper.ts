@@ -110,6 +110,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
         data: jobs,
         itemsScraped: jobs.length,
         duration,
+        source: 'linkedin',
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -121,6 +122,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
         error: error instanceof Error ? error.message : 'Unknown error',
         itemsScraped: jobs.length,
         duration,
+        source: 'linkedin',
       };
     }
   }
