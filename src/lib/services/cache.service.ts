@@ -34,8 +34,8 @@ export interface CacheStats {
   avg_hits_per_entry: number;
   cache_hit_rate?: number;
   most_popular_searches: Array<{
-    search_params: Record<string, any>;
-    hit_count: number;
+    searchKey: Record<string, any>;
+    hitCount: number;
   }>;
 }
 
@@ -161,7 +161,7 @@ export class CacheService {
     try {
       const result = await prisma.searchCache.deleteMany({
         where: {
-          expires_at: {
+          expiresAt: {
             lt: new Date(),
           },
         },
@@ -202,30 +202,30 @@ export class CacheService {
    */
   async getPopularSearches(limit: number = 10): Promise<
     Array<{
-      search_params: Record<string, any>;
-      hit_count: number;
+      searchKey: Record<string, any>;
+      hitCount: number;
     }>
   > {
     try {
       const data = await prisma.searchCache.findMany({
         where: {
-          expires_at: {
+          expiresAt: {
             gt: new Date(),
           },
         },
         select: {
-          search_params: true,
-          hit_count: true,
+          searchKey: true,
+          hitCount: true,
         },
         orderBy: {
-          hit_count: 'desc',
+          hitCount: 'desc',
         },
         take: limit,
       });
 
       return data.map((entry) => ({
-        search_params: entry.search_params as Record<string, any>,
-        hit_count: entry.hit_count,
+        searchKey: entry.searchKey as Record<string, any>,
+        hitCount: entry.hitCount,
       }));
     } catch (error) {
       console.error('[Cache] Error getting popular searches:', error);
@@ -242,22 +242,22 @@ export class CacheService {
     try {
       const allData = await prisma.searchCache.findMany({
         select: {
-          hit_count: true,
+          hitCount: true,
         },
       });
 
       const activeData = await prisma.searchCache.findMany({
         where: {
-          expires_at: {
+          expiresAt: {
             gt: new Date(),
           },
         },
         select: {
-          hit_count: true,
+          hitCount: true,
         },
       });
 
-      const totalHits = allData.reduce((sum, entry) => sum + entry.hit_count, 0);
+      const totalHits = allData.reduce((sum, entry) => sum + entry.hitCount, 0);
       const avgHits = allData.length ? totalHits / allData.length : 0;
 
       const popularSearches = await this.getPopularSearches(5);
@@ -303,10 +303,10 @@ export class CacheService {
         },
         orderBy: [
           {
-            hit_count: 'asc',
+            hitCount: 'asc',
           },
           {
-            created_at: 'asc',
+            createdAt: 'asc',
           },
         ],
         take: toRemove,
@@ -367,10 +367,10 @@ export class CacheService {
       // Using update with increment operation
       await prisma.searchCache.updateMany({
         where: {
-          search_key: searchKey,
+          searchKey: searchKey,
         },
         data: {
-          hit_count: {
+          hitCount: {
             increment: 1,
           },
         },

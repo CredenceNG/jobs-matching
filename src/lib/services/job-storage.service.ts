@@ -11,7 +11,7 @@
  * - Automatic expiry handling (30 days)
  * - Batch insert for performance
  *
- * @cache Jobs are stored with is_active flag and auto-expire after 30 days
+ * @cache Jobs are stored with isActive flag and auto-expire after 30 days
  * @deduplication Uses MD5 hash of title+company+description to prevent duplicates
  */
 
@@ -20,7 +20,7 @@ import crypto from 'crypto';
 
 export interface StoredJob {
   id?: string;
-  external_id: string;
+  externalId: string;
   source: string;
   title: string;
   company: string;
@@ -32,11 +32,11 @@ export interface StoredJob {
   description?: string;
   url?: string;
   posted_date?: string;
-  scraped_at?: string;
-  expires_at?: string;
+  scrapedAt?: string;
+  expiresAt?: string;
   keywords?: string[];
   content_hash?: string;
-  is_active?: boolean;
+  isActive?: boolean;
   raw_data?: Record<string, any>;
 }
 
@@ -74,7 +74,7 @@ export class JobStorageService {
       const keywords = this.extractKeywords(job);
 
       const jobData = {
-        external_id: job.external_id,
+        externalId: job.externalId,
         source: job.source,
         title: job.title,
         company: job.company,
@@ -89,15 +89,15 @@ export class JobStorageService {
         content_hash: contentHash,
         keywords,
         raw_data: job.raw_data,
-        is_active: true,
-        expires_at: this.calculateExpiryDate(job.posted_date),
+        isActive: true,
+        expiresAt: this.calculateExpiryDate(job.posted_date),
       };
 
-      // Use Prisma upsert with unique constraint on (external_id, source)
+      // Use Prisma upsert with unique constraint on (externalId, source)
       const result = await prisma.job.upsert({
         where: {
-          external_id_source: {
-            external_id: job.external_id,
+          externalId_source: {
+            externalId: job.externalId,
             source: job.source,
           },
         },
@@ -137,7 +137,7 @@ export class JobStorageService {
     console.log(`[JobStorage] Storing ${jobs.length} jobs in batch...`);
 
     const jobsData = jobs.map((job) => ({
-      external_id: job.external_id,
+      externalId: job.externalId,
       source: job.source,
       title: job.title,
       company: job.company,
@@ -152,8 +152,8 @@ export class JobStorageService {
       content_hash: this.generateContentHash(job),
       keywords: this.extractKeywords(job),
       raw_data: job.raw_data,
-      is_active: true,
-      expires_at: this.calculateExpiryDate(job.posted_date),
+      isActive: true,
+      expiresAt: this.calculateExpiryDate(job.posted_date),
     }));
 
     try {
@@ -163,8 +163,8 @@ export class JobStorageService {
         try {
           await prisma.job.upsert({
             where: {
-              external_id_source: {
-                external_id: jobData.external_id,
+              externalId_source: {
+                externalId: jobData.externalId,
                 source: jobData.source,
               },
             },
@@ -208,8 +208,8 @@ export class JobStorageService {
 
       // Build the where clause
       const whereClause: any = {
-        is_active: true,
-        scraped_at: {
+        isActive: true,
+        scrapedAt: {
           gte: cutoffDate,
         },
       };
@@ -252,34 +252,34 @@ export class JobStorageService {
           const locationPattern = `%${params.location}%`;
           data = await prisma.$queryRaw<StoredJob[]>`
             SELECT
-              id, external_id, source, title, company, location, location_type,
+              id, externalId, source, title, company, location, location_type,
               employment_type, salary_min, salary_max, description, url,
-              posted_date, scraped_at, expires_at, keywords, content_hash,
-              is_active, raw_data,
+              posted_date, scrapedAt, expiresAt, keywords, content_hash,
+              isActive, raw_data,
               ts_rank(search_vector, plainto_tsquery('english', ${params.query})) as rank
             FROM jobs
             WHERE
-              is_active = true
+              isActive = true
               AND search_vector @@ plainto_tsquery('english', ${params.query})
-              AND scraped_at >= ${cutoffDate}
+              AND scrapedAt >= ${cutoffDate}
               AND location ILIKE ${locationPattern}
-            ORDER BY rank DESC, scraped_at DESC
+            ORDER BY rank DESC, scrapedAt DESC
             LIMIT ${limit}
           `;
         } else {
           data = await prisma.$queryRaw<StoredJob[]>`
             SELECT
-              id, external_id, source, title, company, location, location_type,
+              id, externalId, source, title, company, location, location_type,
               employment_type, salary_min, salary_max, description, url,
-              posted_date, scraped_at, expires_at, keywords, content_hash,
-              is_active, raw_data,
+              posted_date, scrapedAt, expiresAt, keywords, content_hash,
+              isActive, raw_data,
               ts_rank(search_vector, plainto_tsquery('english', ${params.query})) as rank
             FROM jobs
             WHERE
-              is_active = true
+              isActive = true
               AND search_vector @@ plainto_tsquery('english', ${params.query})
-              AND scraped_at >= ${cutoffDate}
-            ORDER BY rank DESC, scraped_at DESC
+              AND scrapedAt >= ${cutoffDate}
+            ORDER BY rank DESC, scrapedAt DESC
             LIMIT ${limit}
           `;
         }
@@ -296,7 +296,7 @@ export class JobStorageService {
       const data = await prisma.job.findMany({
         where: whereClause,
         orderBy: {
-          scraped_at: 'desc',
+          scrapedAt: 'desc',
         },
         skip: offset,
         take: limit,
@@ -327,24 +327,24 @@ export class JobStorageService {
       // Build the where clause
       const whereClause: any = {
         source,
-        is_active: true,
+        isActive: true,
       };
 
       // Add date range filters
       if (startDate || endDate) {
-        whereClause.scraped_at = {};
+        whereClause.scrapedAt = {};
         if (startDate) {
-          whereClause.scraped_at.gte = startDate;
+          whereClause.scrapedAt.gte = startDate;
         }
         if (endDate) {
-          whereClause.scraped_at.lte = endDate;
+          whereClause.scrapedAt.lte = endDate;
         }
       }
 
       const data = await prisma.job.findMany({
         where: whereClause,
         orderBy: {
-          scraped_at: 'desc',
+          scrapedAt: 'desc',
         },
       });
 
@@ -367,27 +367,27 @@ export class JobStorageService {
 
       // Get count of active jobs
       const active_jobs = await prisma.job.count({
-        where: { is_active: true },
+        where: { isActive: true },
       });
 
       // Get all active jobs' sources for aggregation
       const bySourceData = await prisma.job.findMany({
-        where: { is_active: true },
+        where: { isActive: true },
         select: { source: true },
       });
 
       // Get oldest job date
       const oldestJob = await prisma.job.findFirst({
-        where: { is_active: true },
-        orderBy: { scraped_at: 'asc' },
-        select: { scraped_at: true },
+        where: { isActive: true },
+        orderBy: { scrapedAt: 'asc' },
+        select: { scrapedAt: true },
       });
 
       // Get newest job date
       const newestJob = await prisma.job.findFirst({
-        where: { is_active: true },
-        orderBy: { scraped_at: 'desc' },
-        select: { scraped_at: true },
+        where: { isActive: true },
+        orderBy: { scrapedAt: 'desc' },
+        select: { scrapedAt: true },
       });
 
       // Aggregate jobs by source
@@ -400,8 +400,8 @@ export class JobStorageService {
         total_jobs,
         active_jobs,
         jobs_by_source,
-        oldest_job_date: oldestJob?.scraped_at || null,
-        newest_job_date: newestJob?.scraped_at || null,
+        oldest_job_date: oldestJob?.scrapedAt || null,
+        newest_job_date: newestJob?.scrapedAt || null,
       };
     } catch (error) {
       console.error('[JobStorage] Error fetching stats:', error);
@@ -418,13 +418,13 @@ export class JobStorageService {
     try {
       const result = await prisma.job.updateMany({
         where: {
-          expires_at: {
+          expiresAt: {
             lt: new Date(),
           },
-          is_active: true,
+          isActive: true,
         },
         data: {
-          is_active: false,
+          isActive: false,
         },
       });
 

@@ -123,7 +123,8 @@ async function handleSubscriptionCreated(event: any) {
                 await prisma.user.update({
                     where: { id: user.id },
                     data: {
-                        subscriptionStatus: 'premium',
+                        subscriptionStatus: 'active',
+                        isPremium: true,
                         subscriptionId: subscriptionId,
                         subscriptionExpiresAt: subscriptionEndDate,
                         updatedAt: new Date(),
@@ -163,21 +164,21 @@ async function handleSubscriptionUpdated(event: any) {
             return;
         }
 
-        let subscriptionStatus = 'free';
+        let subscriptionStatus: 'active' | 'cancelled' | 'past_due' | 'paused' = 'cancelled';
         let subscriptionExpiresAt: Date | null = null;
 
         if (status === 'active') {
-            subscriptionStatus = cancelAtPeriodEnd ? 'cancelled' : 'premium';
+            subscriptionStatus = cancelAtPeriodEnd ? 'cancelled' : 'active';
             subscriptionExpiresAt = new Date(subscription.current_period_end * 1000);
         } else if (status === 'trialing') {
-            subscriptionStatus = 'trial';
+            subscriptionStatus = 'active';
             subscriptionExpiresAt = new Date(subscription.trial_end * 1000);
         } else if (status === 'past_due') {
-            subscriptionStatus = 'premium'; // Keep premium access during grace period
+            subscriptionStatus = 'past_due';
             subscriptionExpiresAt = new Date(subscription.current_period_end * 1000);
         } else {
             // cancelled, incomplete, incomplete_expired, unpaid
-            subscriptionStatus = 'free';
+            subscriptionStatus = 'cancelled';
         }
 
         // Update user subscription
@@ -215,7 +216,8 @@ async function handleSubscriptionDeleted(event: any) {
             await prisma.user.updateMany({
                 where: { subscriptionId: subscriptionId },
                 data: {
-                    subscriptionStatus: 'free',
+                    subscriptionStatus: 'cancelled',
+                    isPremium: false,
                     subscriptionExpiresAt: null,
                     updatedAt: new Date(),
                 },
@@ -254,7 +256,7 @@ async function handlePaymentSucceeded(event: any) {
 
         // Log the payment
         try {
-            await prisma.aiUsage.create({
+            await prisma.aIUsage.create({
                 data: {
                     userId: user.id,
                     requestType: 'payment_received',
@@ -275,7 +277,8 @@ async function handlePaymentSucceeded(event: any) {
             await prisma.user.update({
                 where: { id: user.id },
                 data: {
-                    subscriptionStatus: 'premium',
+                    subscriptionStatus: 'active',
+                        isPremium: true,
                     updatedAt: new Date(),
                 },
             });
@@ -311,7 +314,7 @@ async function handlePaymentFailed(event: any) {
 
         // Log the failed payment
         try {
-            await prisma.aiUsage.create({
+            await prisma.aIUsage.create({
                 data: {
                     userId: user.id,
                     requestType: 'payment_failed',

@@ -65,7 +65,7 @@ export class ScheduleService {
         metadata: schedule.metadata || {},
       };
 
-      const result = await prisma.scrapingSchedule.create({
+      const result = await prisma.scrapeSchedule.create({
         data: scheduleData,
       });
 
@@ -89,7 +89,7 @@ export class ScheduleService {
    */
   async getDueSchedules(limit: number = 10): Promise<ScrapingSchedule[]> {
     try {
-      const schedules = await prisma.scrapingSchedule.findMany({
+      const schedules = await prisma.scrapeSchedule.findMany({
         where: {
           isActive: true,
           nextScrapeAt: {
@@ -132,7 +132,7 @@ export class ScheduleService {
    */
   async getActiveSchedules(): Promise<ScrapingSchedule[]> {
     try {
-      const schedules = await prisma.scrapingSchedule.findMany({
+      const schedules = await prisma.scrapeSchedule.findMany({
         where: {
           isActive: true,
         },
@@ -167,7 +167,7 @@ export class ScheduleService {
    */
   async getSchedulesBySource(source: string): Promise<ScrapingSchedule[]> {
     try {
-      const schedules = await prisma.scrapingSchedule.findMany({
+      const schedules = await prisma.scrapeSchedule.findMany({
         where: {
           source,
           isActive: true,
@@ -206,7 +206,7 @@ export class ScheduleService {
   async markScraped(scheduleId: string, success: boolean = true): Promise<void> {
     try {
       // Get current schedule to calculate next scrape time
-      const schedule = await prisma.scrapingSchedule.findUnique({
+      const schedule = await prisma.scrapeSchedule.findUnique({
         where: { id: scheduleId },
         select: { frequencyHours: true },
       });
@@ -219,7 +219,7 @@ export class ScheduleService {
       const nextScrapeAt = new Date(now);
       nextScrapeAt.setHours(nextScrapeAt.getHours() + schedule.frequencyHours);
 
-      await prisma.scrapingSchedule.update({
+      await prisma.scrapeSchedule.update({
         where: { id: scheduleId },
         data: {
           lastScrapedAt: now,
@@ -248,7 +248,7 @@ export class ScheduleService {
         throw new Error('Priority must be between 1 and 10');
       }
 
-      await prisma.scrapingSchedule.update({
+      await prisma.scrapeSchedule.update({
         where: { id: scheduleId },
         data: {
           priority,
@@ -276,7 +276,7 @@ export class ScheduleService {
         throw new Error('Frequency must be at least 1 hour');
       }
 
-      await prisma.scrapingSchedule.update({
+      await prisma.scrapeSchedule.update({
         where: { id: scheduleId },
         data: {
           frequencyHours,
@@ -300,7 +300,7 @@ export class ScheduleService {
    */
   async setActive(scheduleId: string, isActive: boolean): Promise<void> {
     try {
-      await prisma.scrapingSchedule.update({
+      await prisma.scrapeSchedule.update({
         where: { id: scheduleId },
         data: {
           isActive,
@@ -323,7 +323,7 @@ export class ScheduleService {
    */
   async deleteSchedule(scheduleId: string): Promise<void> {
     try {
-      await prisma.scrapingSchedule.delete({
+      await prisma.scrapeSchedule.delete({
         where: { id: scheduleId },
       });
 
@@ -341,7 +341,7 @@ export class ScheduleService {
    */
   async getStats(): Promise<ScheduleStats> {
     try {
-      const allSchedules = await prisma.scrapingSchedule.findMany({
+      const allSchedules = await prisma.scrapeSchedule.findMany({
         select: {
           id: true,
           source: true,
@@ -351,7 +351,7 @@ export class ScheduleService {
 
       const now = new Date();
 
-      const dueSchedules = await prisma.scrapingSchedule.findMany({
+      const dueSchedules = await prisma.scrapeSchedule.findMany({
         where: {
           isActive: true,
           nextScrapeAt: {
@@ -364,7 +364,7 @@ export class ScheduleService {
       const oneHourFromNow = new Date();
       oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
 
-      const upcoming1h = await prisma.scrapingSchedule.findMany({
+      const upcoming1h = await prisma.scrapeSchedule.findMany({
         where: {
           isActive: true,
           nextScrapeAt: {
@@ -378,7 +378,7 @@ export class ScheduleService {
       const twentyFourHoursFromNow = new Date();
       twentyFourHoursFromNow.setHours(twentyFourHoursFromNow.getHours() + 24);
 
-      const upcoming24h = await prisma.scrapingSchedule.findMany({
+      const upcoming24h = await prisma.scrapeSchedule.findMany({
         where: {
           isActive: true,
           nextScrapeAt: {
