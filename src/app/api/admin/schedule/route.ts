@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         sourcesToScrape: data.sourcesToScrape,
         nextRun: nextRun,
         isActive: data.isActive ?? true,
-      }
+      } as any,
     });
 
     console.log(`✅ Admin created schedule: ${schedule.id}`);

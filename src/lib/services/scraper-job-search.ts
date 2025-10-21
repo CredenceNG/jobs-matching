@@ -241,8 +241,7 @@ export class ScraperJobSearchService {
         return glassdoorResult.success ? (glassdoorResult.data || []) : [];
 
       case 'linkedin':
-        const linkedInResult = await linkedInScraper.scrape({
-          keywords: query,
+        const linkedInResult = await linkedInScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 5
@@ -250,8 +249,7 @@ export class ScraperJobSearchService {
         return linkedInResult.success ? (linkedInResult.data || []) : [];
 
       case 'ziprecruiter':
-        const ziprecruiterResult = await ziprecruiterScraper.scrape({
-          keywords: query,
+        const ziprecruiterResult = await ziprecruiterScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 5
@@ -259,8 +257,7 @@ export class ScraperJobSearchService {
         return ziprecruiterResult.success ? (ziprecruiterResult.data || []) : [];
 
       case 'monster':
-        const monsterResult = await monsterScraper.scrape({
-          keywords: query,
+        const monsterResult = await monsterScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 5
@@ -268,8 +265,7 @@ export class ScraperJobSearchService {
         return monsterResult.success ? (monsterResult.data || []) : [];
 
       case 'careerbuilder':
-        const careerBuilderResult = await careerBuilderScraper.scrape({
-          keywords: query,
+        const careerBuilderResult = await careerBuilderScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 5
@@ -277,8 +273,7 @@ export class ScraperJobSearchService {
         return careerBuilderResult.success ? (careerBuilderResult.data || []) : [];
 
       case 'simplyhired':
-        const simplyHiredResult = await simplyHiredScraper.scrape({
-          keywords: query,
+        const simplyHiredResult = await simplyHiredScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 5
@@ -286,8 +281,7 @@ export class ScraperJobSearchService {
         return simplyHiredResult.success ? (simplyHiredResult.data || []) : [];
 
       case 'stackoverflow':
-        const stackOverflowResult = await stackOverflowScraper.scrape({
-          keywords: query,
+        const stackOverflowResult = await stackOverflowScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 3
@@ -295,8 +289,7 @@ export class ScraperJobSearchService {
         return stackOverflowResult.success ? (stackOverflowResult.data || []) : [];
 
       case 'dice':
-        const diceResult = await diceScraper.scrape({
-          keywords: query,
+        const diceResult = await diceScraper.scrape(query, {
           location: options.location,
           remote: options.remote,
           maxPages: 5

@@ -95,7 +95,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
             await this.delay(delay);
           }
         }
-      });
+      }, `Search for "${query}"`);
 
       const duration = Date.now() - startTime;
 
@@ -141,16 +141,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
     const url = this.buildSearchUrl(options, pageNumber);
     console.log(`🌐 [LinkedIn] URL: ${url}`);
 
-    const browser = await this.getBrowser({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-      ],
-    });
+    const browser = await this.getBrowser();
 
     try {
       const page = await browser.newPage();

@@ -168,8 +168,8 @@ export class JobStorageService {
                 source: jobData.source,
               },
             },
-            update: jobData,
-            create: jobData,
+            update: jobData as any,
+            create: jobData as any,
           });
           stored++;
         } catch (error: any) {

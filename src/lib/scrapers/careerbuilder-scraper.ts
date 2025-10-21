@@ -80,7 +80,7 @@ export class CareerBuilderScraper extends BaseScraper<CareerBuilderJob> {
             await this.delay(2500 + Math.random() * 2000); // 2.5-4.5 second delay
           }
         }
-      });
+      }, `Search for "${query}"`);
 
       const duration = Date.now() - startTime;
 

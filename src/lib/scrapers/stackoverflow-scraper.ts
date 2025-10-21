@@ -82,7 +82,7 @@ export class StackOverflowScraper extends BaseScraper<StackOverflowJob> {
             await this.delay(3000 + Math.random() * 2000); // 3-5 second delay
           }
         }
-      });
+      }, `Search for "${query}"`);
 
       const duration = Date.now() - startTime;
 

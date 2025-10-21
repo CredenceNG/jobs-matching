@@ -400,7 +400,7 @@ ${resumeData.experience
     (exp) =>
       `${exp.title} - ${exp.company}
 ${exp.startDate} - ${exp.endDate}
-${(exp.responsibilities || exp.description || []).join("\n")}`
+${(exp.responsibilities || (Array.isArray(exp.description) ? exp.description : (exp.description ? [exp.description] : []))).join("\n")}`
   )
   .join("\n\n")}
 

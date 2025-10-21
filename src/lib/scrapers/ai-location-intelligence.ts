@@ -61,12 +61,7 @@ export async function normalizeLocationWithAI(
   try {
     console.log(`🤖 [AI Location] Normalizing: "${locationInput}"`);
 
-    const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4o-mini', // Fast and cheap for this task
-      messages: [
-        {
-          role: 'system',
-          content: `You are a location normalization expert. Given a location string, normalize it to a standard format and provide structured information.
+    const prompt = `You are a location normalization expert. Given a location string, normalize it to a standard format and provide structured information.
 
 RULES:
 1. Handle typos, abbreviations, alternate spellings
@@ -75,7 +70,9 @@ RULES:
 4. Provide confidence score 0-100
 5. Suggest similar locations if unsure
 
-Return JSON format:
+Normalize this location: "${locationInput}"
+
+Return ONLY valid JSON format (no markdown, no code blocks):
 {
   "normalized": "London",
   "country": "United Kingdom",
@@ -83,18 +80,15 @@ Return JSON format:
   "region": "Europe",
   "confidence": 95,
   "suggestions": ["London, UK", "London, Ontario, Canada"]
-}`,
-        },
-        {
-          role: 'user',
-          content: `Normalize this location: "${locationInput}"`,
-        },
-      ],
-      temperature: 0.3, // Low temperature for consistency
-      response_format: { type: 'json_object' },
+}`;
+
+    const response = await openaiClient.generateText(prompt, {
+      model: 'gpt-4o-mini',
+      temperature: 0.3,
+      maxTokens: 500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const result = JSON.parse(response.content);
 
     console.log(`✅ [AI Location] Normalized to: ${result.normalized} (confidence: ${result.confidence}%)`);
 
@@ -140,12 +134,7 @@ export async function recommendJobBoardsWithAI(
   try {
     console.log(`🤖 [AI Location] Recommending job boards for ${city ? city + ', ' : ''}${country}`);
 
-    const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a global job market expert. Recommend the best job boards for a given location.
+    const prompt = `You are a global job market expert. Recommend the best job boards for a given location.
 
 Consider:
 1. Local popular job sites (e.g., Seek in Australia, Naukri in India)
@@ -153,22 +142,21 @@ Consider:
 3. Tech-specific sites if it's a tech hub
 4. Language and regional preferences
 
-Return JSON:
+Recommend job boards for: ${city ? city + ', ' : ''}${country}
+
+Return ONLY valid JSON (no markdown):
 {
   "boards": ["indeed", "linkedin", "local_board_1", "local_board_2"],
   "reasoning": "Brief explanation of why these boards were chosen"
-}`,
-        },
-        {
-          role: 'user',
-          content: `Recommend job boards for: ${city ? city + ', ' : ''}${country}`,
-        },
-      ],
+}`;
+
+    const response = await openaiClient.generateText(prompt, {
+      model: 'gpt-4o-mini',
       temperature: 0.5,
-      response_format: { type: 'json_object' },
+      maxTokens: 500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const result = JSON.parse(response.content);
 
     console.log(`✅ [AI Location] Recommended ${result.boards?.length || 0} job boards`);
 
@@ -204,13 +192,7 @@ export async function generateLocationConfigWithAI(
   try {
     console.log(`🤖 [AI Location] Generating config for: ${country}`);
 
-    const response = await anthropicClient.messages.create({
-      model: 'claude-sonnet-4-20250514', // Use Claude for more thoughtful analysis
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: `Generate a complete location configuration for job search in ${country}.
+    const prompt = `Generate a complete location configuration for job search in ${country}.
 
 Include:
 1. **Region**: Geographic region (e.g., 'europe', 'asia', 'south_america')
@@ -228,7 +210,7 @@ Include:
 6. **Priority**: Suggest priority 80-100 (100 for major English markets, 90 for large markets, 80-85 for others)
 7. **Reasoning**: Explain your board selection
 
-Return valid JSON:
+Return valid JSON (no markdown):
 {
   "country": "Brazil",
   "region": "south_america",
@@ -240,18 +222,15 @@ Return valid JSON:
   "reasoning": "Brazil has a large tech market..."
 }
 
-Research actual job boards used in ${country}. Be accurate.`,
-        },
-      ],
+Research actual job boards used in ${country}. Be accurate.`;
+
+    const response = await anthropicClient.generateText(prompt, {
+      model: 'claude-sonnet-4-20250514',
+      maxTokens: 2000,
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
-
     // Extract JSON from response (Claude might include markdown)
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No JSON found in Claude response');
     }
@@ -288,12 +267,7 @@ export async function fuzzyMatchLocationWithAI(
   try {
     console.log(`🤖 [AI Location] Fuzzy matching: "${locationInput}"`);
 
-    const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Match a user's location input to the best available country from a list.
+    const prompt = `Match a user's location input to the best available country from a list.
 
 Handle:
 - Typos
@@ -301,22 +275,21 @@ Handle:
 - Partial matches
 - Colloquialisms
 
-Return JSON:
+Match "${locationInput}" to one of these countries: ${availableCountries.join(', ')}
+
+Return ONLY valid JSON (no markdown):
 {
   "country": "United Kingdom",
   "confidence": 95
-}`,
-        },
-        {
-          role: 'user',
-          content: `Match "${locationInput}" to one of these countries: ${availableCountries.join(', ')}`,
-        },
-      ],
+}`;
+
+    const response = await openaiClient.generateText(prompt, {
+      model: 'gpt-4o-mini',
       temperature: 0.2,
-      response_format: { type: 'json_object' },
+      maxTokens: 300,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const result = JSON.parse(response.content);
 
     console.log(`✅ [AI Location] Matched to: ${result.country} (${result.confidence}% confidence)`);
 

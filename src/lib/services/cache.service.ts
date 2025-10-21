@@ -224,7 +224,7 @@ export class CacheService {
       });
 
       return data.map((entry) => ({
-        searchKey: entry.searchKey as Record<string, any>,
+        searchKey: (entry.searchKey as unknown) as Record<string, any>,
         hitCount: entry.hitCount,
       }));
     } catch (error) {

@@ -97,13 +97,13 @@ export class ScrapingLogService {
    */
   async getRecentLogs(limit: number = 100, source?: string): Promise<ScrapingLog[]> {
     try {
-      const logs = await prisma.scrapeRun.findMany({
+      const logs = await (prisma.scrapeRun.findMany({
         where: source ? { source } : undefined,
         orderBy: { createdAt: 'desc' },
         take: limit,
-      });
+      }) as any);
 
-      return logs.map(log => ({
+      return logs.map((log: any) => ({
         id: log.id,
         source: log.source || 'unknown',
         search_query: log.searchQuery || undefined,
@@ -136,7 +136,7 @@ export class ScrapingLogService {
     source?: string
   ): Promise<ScrapingLog[]> {
     try {
-      const logs = await prisma.scrapeRun.findMany({
+      const logs = await (prisma.scrapeRun.findMany({
         where: {
           createdAt: {
             gte: startDate,
@@ -145,9 +145,9 @@ export class ScrapingLogService {
           ...(source ? { source } : {}),
         },
         orderBy: { createdAt: 'desc' },
-      });
+      }) as any);
 
-      return logs.map(log => ({
+      return logs.map((log: any) => ({
         id: log.id,
         source: log.source || 'unknown',
         search_query: log.searchQuery || undefined,
@@ -178,7 +178,7 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursBack);
 
-      const logs = await prisma.scrapeRun.findMany({
+      const logs = await (prisma.scrapeRun.findMany({
         where: {
           status: 'error',
           createdAt: {
@@ -187,9 +187,9 @@ export class ScrapingLogService {
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
-      });
+      }) as any);
 
-      return logs.map(log => ({
+      return logs.map((log: any) => ({
         id: log.id,
         source: log.source || 'unknown',
         search_query: log.searchQuery || undefined,
@@ -219,13 +219,13 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursBack);
 
-      const logs = await prisma.scrapeRun.findMany({
+      const logs = await (prisma.scrapeRun.findMany({
         where: {
           createdAt: {
             gte: cutoffDate,
           },
         },
-      });
+      }) as any);
 
       if (!logs || logs.length === 0) {
         return {
@@ -333,7 +333,7 @@ export class ScrapingLogService {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursBack);
 
-      const logs = await prisma.scrapeRun.findMany({
+      const logs = await (prisma.scrapeRun.findMany({
         where: {
           source,
           createdAt: {
@@ -341,7 +341,7 @@ export class ScrapingLogService {
           },
         },
         orderBy: { createdAt: 'desc' },
-      });
+      }) as any);
 
       if (!logs || logs.length === 0) {
         return { isBlocked: false, reason: 'No recent scraping attempts' };
