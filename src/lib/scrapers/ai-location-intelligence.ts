@@ -11,8 +11,8 @@
  * @module AILocationIntelligence
  */
 
-import { openai } from '@/lib/ai/openai';
-import { anthropic } from '@/lib/ai/anthropic';
+import { openaiClient } from '@/lib/ai/openai';
+import { anthropicClient } from '@/lib/ai/anthropic';
 import { prisma } from '@/lib/prisma';
 
 // =============================================================================
@@ -61,7 +61,7 @@ export async function normalizeLocationWithAI(
   try {
     console.log(`🤖 [AI Location] Normalizing: "${locationInput}"`);
 
-    const response = await openai.chat.completions.create({
+    const response = await openaiClient.chat.completions.create({
       model: 'gpt-4o-mini', // Fast and cheap for this task
       messages: [
         {
@@ -140,7 +140,7 @@ export async function recommendJobBoardsWithAI(
   try {
     console.log(`🤖 [AI Location] Recommending job boards for ${city ? city + ', ' : ''}${country}`);
 
-    const response = await openai.chat.completions.create({
+    const response = await openaiClient.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -204,7 +204,7 @@ export async function generateLocationConfigWithAI(
   try {
     console.log(`🤖 [AI Location] Generating config for: ${country}`);
 
-    const response = await anthropic.messages.create({
+    const response = await anthropicClient.messages.create({
       model: 'claude-sonnet-4-20250514', // Use Claude for more thoughtful analysis
       max_tokens: 2000,
       messages: [
@@ -288,7 +288,7 @@ export async function fuzzyMatchLocationWithAI(
   try {
     console.log(`🤖 [AI Location] Fuzzy matching: "${locationInput}"`);
 
-    const response = await openai.chat.completions.create({
+    const response = await openaiClient.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {

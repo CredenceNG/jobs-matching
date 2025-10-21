@@ -197,6 +197,7 @@ export default function ResumeJobSearchV2() {
         success: boolean
         matches?: JobMatch[]
         analysis?: any
+        parsedData?: any
         message?: string
         error?: string
     } | null>(null)

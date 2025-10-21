@@ -90,7 +90,9 @@ export async function POST(request: NextRequest) {
             jobType: jobType || 'Full-time',
             description: description || '',
             requirements: Array.isArray(requirements) ? requirements : [],
-            salary: '',
+            remote: false,
+            url: '',
+            salary: { min: undefined, max: undefined, currency: 'USD' },
             postedDate: new Date().toISOString(),
             source: 'user-provided'
         };

@@ -41,7 +41,7 @@ export interface StackOverflowSearchOptions {
   maxPages?: number;
 }
 
-export class StackOverflowScraper extends BaseScraper {
+export class StackOverflowScraper extends BaseScraper<StackOverflowJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'StackOverflow',
@@ -93,7 +93,7 @@ export class StackOverflowScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     } catch (error) {
@@ -104,7 +104,7 @@ export class StackOverflowScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     }

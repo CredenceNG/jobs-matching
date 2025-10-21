@@ -21,7 +21,7 @@ export default function BuyTokensPage() {
     const router = useRouter();
     const [pricingModel, setPricingModel] = useState<'tokens' | 'subscription'>('tokens');
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-    const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+    const [selectedPackage, setSelectedPackage] = useState<string | undefined>(undefined);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [isCreatingPayment, setIsCreatingPayment] = useState(false);
     const [error, setError] = useState<string | null>(null);

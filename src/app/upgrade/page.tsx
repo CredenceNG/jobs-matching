@@ -33,7 +33,7 @@ function UpgradeForm() {
 
                 setUser(currentUser);
 
-                const userProfile = await getUserProfile(currentUser.id);
+                const userProfile = await getUserProfile();
                 setProfile(userProfile);
             } catch (error) {
                 console.error('Error loading user data:', error);

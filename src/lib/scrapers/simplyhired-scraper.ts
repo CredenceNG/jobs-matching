@@ -36,7 +36,7 @@ export interface SimplyHiredSearchOptions {
   maxPages?: number;
 }
 
-export class SimplyHiredScraper extends BaseScraper {
+export class SimplyHiredScraper extends BaseScraper<SimplyHiredJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'SimplyHired',
@@ -85,7 +85,7 @@ export class SimplyHiredScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     } catch (error) {
@@ -96,7 +96,7 @@ export class SimplyHiredScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     }

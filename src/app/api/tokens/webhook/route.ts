@@ -72,15 +72,18 @@ export async function POST(request: NextRequest) {
 
             // Credit tokens to user account
             try {
+                const chargeId = (paymentIntent as any).charges?.data?.[0]?.id || paymentIntent.id;
+
                 await TokenService.addTokens(
                     userId,
                     tokensAmount,
                     'purchase',
+                    `Purchased ${tokensAmount} tokens via Stripe`,
                     {
                         package_id: packageId,
                         payment_intent_id: paymentIntent.id,
                         amount_cents: paymentIntent.amount,
-                        stripe_charge_id: paymentIntent.charges.data[0]?.id
+                        stripe_charge_id: chargeId
                     }
                 );
 

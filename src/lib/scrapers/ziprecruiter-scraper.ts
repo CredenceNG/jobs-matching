@@ -35,7 +35,7 @@ export interface ZipRecruiterSearchOptions {
   maxPages?: number;
 }
 
-export class ZipRecruiterScraper extends BaseScraper {
+export class ZipRecruiterScraper extends BaseScraper<ZipRecruiterJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'ZipRecruiter',
@@ -84,7 +84,7 @@ export class ZipRecruiterScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     } catch (error) {
@@ -95,7 +95,7 @@ export class ZipRecruiterScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     }

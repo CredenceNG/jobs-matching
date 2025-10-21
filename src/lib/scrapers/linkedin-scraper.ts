@@ -38,7 +38,7 @@ export interface LinkedInSearchOptions {
   maxPages?: number;
 }
 
-export class LinkedInScraper extends BaseScraper {
+export class LinkedInScraper extends BaseScraper<LinkedInJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'LinkedIn',
@@ -108,7 +108,7 @@ export class LinkedInScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     } catch (error) {
@@ -119,7 +119,7 @@ export class LinkedInScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     }

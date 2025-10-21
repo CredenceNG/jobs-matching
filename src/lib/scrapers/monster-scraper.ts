@@ -35,7 +35,7 @@ export interface MonsterSearchOptions {
   maxPages?: number;
 }
 
-export class MonsterScraper extends BaseScraper {
+export class MonsterScraper extends BaseScraper<MonsterJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'Monster',
@@ -84,7 +84,7 @@ export class MonsterScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     } catch (error) {
@@ -95,7 +95,7 @@ export class MonsterScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
       };
     }

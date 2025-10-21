@@ -78,6 +78,7 @@ export default function ResumeJobSearch() {
         matches?: JobMatch[]
         recommendations?: string[]
         analysis?: any
+        parsedData?: any
         message?: string
         error?: string
     } | null>(null)

@@ -38,7 +38,7 @@ export interface DiceSearchOptions {
   maxPages?: number;
 }
 
-export class DiceScraper extends BaseScraper {
+export class DiceScraper extends BaseScraper<DiceJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'Dice',
@@ -93,8 +93,9 @@ export class DiceScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
+        source: 'dice',
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -104,8 +105,9 @@ export class DiceScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
+        source: 'dice',
       };
     }
   }

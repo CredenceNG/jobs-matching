@@ -36,7 +36,7 @@ export interface CareerBuilderSearchOptions {
   maxPages?: number;
 }
 
-export class CareerBuilderScraper extends BaseScraper {
+export class CareerBuilderScraper extends BaseScraper<CareerBuilderJob> {
   constructor() {
     const config: ScraperConfig = {
       name: 'CareerBuilder',
@@ -85,8 +85,9 @@ export class CareerBuilderScraper extends BaseScraper {
       return {
         success: true,
         data: jobs,
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
+        source: 'careerbuilder',
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -96,8 +97,9 @@ export class CareerBuilderScraper extends BaseScraper {
         success: false,
         data: jobs,
         error: error instanceof Error ? error.message : 'Unknown error',
-        itemCount: jobs.length,
+        itemsScraped: jobs.length,
         duration,
+        source: 'careerbuilder',
       };
     }
   }

@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyWebhookSignature } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export async function POST(request: NextRequest) {
     try {
@@ -260,13 +261,16 @@ async function handlePaymentSucceeded(event: any) {
             await prisma.aIUsage.create({
                 data: {
                     userId: user.id,
+                    feature: 'subscription_payment',
                     requestType: 'payment_received',
-                    costUsd: amountPaid / 100,
-                    createdAt: new Date(),
-                    metadata: {
-                        subscription_id: subscriptionId,
-                        invoice_id: invoice.id
-                    },
+                    engineId: 'stripe', // placeholder engine ID
+                    inputTokens: 0,
+                    outputTokens: 0,
+                    cost: new Decimal(amountPaid / 100),
+                    duration: 0,
+                    timestamp: new Date(),
+                    success: true,
+                    errorMessage: null,
                 },
             });
         } catch (logError) {
@@ -318,14 +322,16 @@ async function handlePaymentFailed(event: any) {
             await prisma.aIUsage.create({
                 data: {
                     userId: user.id,
+                    feature: 'subscription_payment_failed',
                     requestType: 'payment_failed',
-                    costUsd: 0,
-                    createdAt: new Date(),
-                    metadata: {
-                        subscription_id: subscriptionId,
-                        invoice_id: invoice.id,
-                        failure_reason: 'Payment failed'
-                    },
+                    engineId: 'stripe', // placeholder engine ID
+                    inputTokens: 0,
+                    outputTokens: 0,
+                    cost: new Decimal(0),
+                    duration: 0,
+                    timestamp: new Date(),
+                    success: false,
+                    errorMessage: 'Payment failed',
                 },
             });
         } catch (logError) {
@@ -427,10 +433,10 @@ async function handleTokenPurchaseSucceeded(event: any) {
                 amount: tokens,
                 type: 'purchase',
                 balanceBefore: currentTokens?.balance || 0,
-                balanceAfter: (currentTokens?.balance || 0) + tokens,
                 description: `Purchased ${tokens} tokens`,
                 metadata: {
                     payment_intent_id: paymentIntent.id,
+                    balance_after: (currentTokens?.balance || 0) + tokens,
                     package_id: packageId,
                     amount_cents: paymentIntent.amount
                 },

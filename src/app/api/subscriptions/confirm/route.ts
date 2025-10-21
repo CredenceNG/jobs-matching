@@ -108,8 +108,9 @@ export async function POST(request: NextRequest) {
             data: {
                 isPremium: true,
                 subscriptionId: subscription.id,
-                stripeCustomerId: session.customer as string,
-                subscriptionExpiresAt: new Date(subscription.current_period_end * 1000),
+                subscriptionStatus: 'active',
+                subscriptionEndDate: new Date(subscription.current_period_end * 1000),
+                subscriptionCreatedAt: new Date(),
                 updatedAt: new Date()
             }
         });

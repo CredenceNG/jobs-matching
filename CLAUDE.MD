@@ -648,3 +648,9 @@ Begin with: "Create the Next.js project structure and Prisma database schema bas
 - ALWAYS validate user inputs
 - ALWAYS check premium status before allowing premium features
 - Focus on production-ready code with proper error boundaries
+
+Please dont include:
+
+"🤖 Generated with Claude Code
+
+Co-Authored-By: Claude <noreply@anthropic.com>"

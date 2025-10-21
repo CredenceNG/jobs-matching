@@ -55,6 +55,7 @@ export interface WorkExperience {
   description: string[];
   achievements?: string[];
   responsibilities?: string[];
+  technologies?: string[];
 }
 
 export interface Education {
@@ -67,6 +68,8 @@ export interface Education {
   endDate?: Date;
   gpa?: number;
   honors?: string[];
+  relevantCourses?: string[];
+  achievements?: string[];
 }
 
 export interface Skill {

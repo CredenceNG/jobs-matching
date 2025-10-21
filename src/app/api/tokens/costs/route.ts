@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
         if (detailed) {
             const features = await TokenService.getAllFeatureCostsDetailed();
-            const costs = features.reduce((acc, f) => {
+            const costs = features.reduce((acc, f: any) => {
                 acc[f.featureKey] = f.tokenCost;
                 return acc;
             }, {} as Record<string, number>);

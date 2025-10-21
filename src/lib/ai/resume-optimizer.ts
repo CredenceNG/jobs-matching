@@ -67,7 +67,7 @@ export interface OptimizedResume {
   suggestedImprovements: string[];
 }
 
-export interface ResumeAnalysis {
+export interface ResumeOptimizationAnalysis {
   overallScore: number;
   atsCompatibility: number;
   keywordMatch: number;
@@ -261,7 +261,9 @@ Make it compelling, truthful, and laser-focused on landing THIS specific job.`;
     resumeData.experience.forEach((exp, index) => {
       prompt += `${index + 1}. ${exp.title} at ${exp.company}\n`;
       prompt += `   Dates: ${exp.startDate} - ${exp.endDate}\n`;
-      prompt += `   Responsibilities: ${exp.responsibilities.join("; ")}\n`;
+      if (exp.responsibilities && exp.responsibilities.length > 0) {
+        prompt += `   Responsibilities: ${exp.responsibilities.join("; ")}\n`;
+      }
       if (exp.achievements.length > 0) {
         prompt += `   Achievements: ${exp.achievements.join("; ")}\n`;
       }
@@ -298,7 +300,8 @@ Make it compelling, truthful, and laser-focused on landing THIS specific job.`;
         prompt += `${project.name}:\n`;
         prompt += `  Description: ${project.description}\n`;
         prompt += `  Technologies: ${project.technologies.join(", ")}\n`;
-        if (project.link) prompt += `  Link: ${project.link}\n`;
+        const projectUrl = project.link || project.url;
+        if (projectUrl) prompt += `  Link: ${projectUrl}\n`;
         prompt += `\n`;
       });
     }
@@ -397,7 +400,7 @@ ${resumeData.experience
     (exp) =>
       `${exp.title} - ${exp.company}
 ${exp.startDate} - ${exp.endDate}
-${exp.responsibilities.join("\n")}`
+${(exp.responsibilities || exp.description || []).join("\n")}`
   )
   .join("\n\n")}
 
@@ -421,7 +424,7 @@ ${resumeData.education
           title: exp.title,
           company: exp.company,
           dates: `${exp.startDate} - ${exp.endDate}`,
-          achievements: exp.achievements.length > 0 ? exp.achievements : exp.responsibilities,
+          achievements: exp.achievements && exp.achievements.length > 0 ? exp.achievements : (exp.responsibilities || []),
         })),
         skills: resumeData.skills,
         education: resumeData.education.map((edu) => ({
@@ -453,7 +456,7 @@ ${resumeData.education
     userId: string,
     resumeText: string,
     jobListing: JobListing
-  ): Promise<ResumeAnalysis> {
+  ): Promise<ResumeOptimizationAnalysis> {
     const systemPrompt = `You are an expert resume reviewer and ATS specialist.
 
 ANALYSIS CRITERIA:
@@ -534,7 +537,7 @@ Provide detailed analysis focusing on how well this resume matches the job requi
   /**
    * Validate analysis data
    */
-  private validateAnalysis(data: any): ResumeAnalysis {
+  private validateAnalysis(data: any): ResumeOptimizationAnalysis {
     return {
       overallScore: Math.min(Math.max(data.overallScore || 50, 0), 100),
       atsCompatibility: Math.min(Math.max(data.atsCompatibility || 50, 0), 100),
@@ -554,7 +557,7 @@ Provide detailed analysis focusing on how well this resume matches the job requi
   /**
    * Get default analysis when AI fails
    */
-  private getDefaultAnalysis(): ResumeAnalysis {
+  private getDefaultAnalysis(): ResumeOptimizationAnalysis {
     return {
       overallScore: 50,
       atsCompatibility: 50,

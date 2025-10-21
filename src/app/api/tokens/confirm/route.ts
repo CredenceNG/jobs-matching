@@ -97,6 +97,9 @@ export async function POST(request: NextRequest) {
         // Step 7: Credit tokens to user account
         console.log(`🔵 [Token Confirm] Crediting ${tokensAmount} tokens to user...`);
 
+        // Get charge ID from payment intent
+        const chargeId = (paymentIntent as any).charges?.data?.[0]?.id || paymentIntent.id;
+
         await TokenService.addTokens(
             user.id,
             tokensAmount,
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
                 package_id: packageId,
                 payment_intent_id: paymentIntentId,
                 amount_cents: paymentIntent.amount,
-                stripe_charge_id: paymentIntent.charges.data[0]?.id
+                stripe_charge_id: chargeId
             }
         );
 
@@ -120,7 +123,7 @@ export async function POST(request: NextRequest) {
             data: {
                 status: 'completed',
                 completedAt: new Date(),
-                stripeChargeId: paymentIntent.charges.data[0]?.id,
+                stripeChargeId: chargeId,
             },
         });
 

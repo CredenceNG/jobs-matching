@@ -68,7 +68,7 @@ export function DashboardContent({ user, userProfile }: DashboardContentProps) {
         }
     };
 
-    const isPremium = userProfile?.subscriptionStatus === 'premium';
+    const isPremium = userProfile?.subscription_status === 'premium';
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -77,7 +77,7 @@ export function DashboardContent({ user, userProfile }: DashboardContentProps) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">
-                            Welcome back, {userProfile?.fullName || user?.email}!
+                            Welcome back, {userProfile?.full_name || user?.email}!
                         </h1>
                         <p className="text-gray-600 mt-2">
                             Ready to find your next opportunity?
