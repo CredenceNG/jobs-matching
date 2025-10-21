@@ -499,7 +499,7 @@ export class TokenService {
         metadata?: Record<string, any>
     ): Promise<DeductionResult> {
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: authUserId },
             select: { id: true },
         });
 
@@ -619,7 +619,7 @@ export class TokenService {
         limit: number = 50
     ): Promise<TokenTransaction[]> {
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: authUserId },
             select: { id: true },
         });
 

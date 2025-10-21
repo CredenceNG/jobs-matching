@@ -61,7 +61,7 @@ export class ScrapingLogService {
   async log(log: ScrapingLog): Promise<string> {
     try {
       const logData = {
-        source: log.source,
+        source: log.source || 'unknown',
         searchQuery: log.search_query,
         location: log.location,
         status: log.status,
@@ -105,7 +105,7 @@ export class ScrapingLogService {
 
       return logs.map(log => ({
         id: log.id,
-        source: log.source,
+        source: log.source || 'unknown',
         search_query: log.searchQuery || undefined,
         location: log.location || undefined,
         status: log.status as 'success' | 'error' | 'partial',
@@ -149,7 +149,7 @@ export class ScrapingLogService {
 
       return logs.map(log => ({
         id: log.id,
-        source: log.source,
+        source: log.source || 'unknown',
         search_query: log.searchQuery || undefined,
         location: log.location || undefined,
         status: log.status as 'success' | 'error' | 'partial',
@@ -191,7 +191,7 @@ export class ScrapingLogService {
 
       return logs.map(log => ({
         id: log.id,
-        source: log.source,
+        source: log.source || 'unknown',
         search_query: log.searchQuery || undefined,
         location: log.location || undefined,
         status: log.status as 'success' | 'error' | 'partial',
@@ -284,7 +284,7 @@ export class ScrapingLogService {
         .filter((log) => log.status === 'error')
         .slice(0, 10)
         .map((log) => ({
-          source: log.source,
+          source: log.source || 'unknown',
           error_message: log.errorMessage || 'Unknown error',
           created_at: log.createdAt.toISOString(),
         }));
