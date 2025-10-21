@@ -174,6 +174,8 @@ model LocationConfig {
 model Job {
   id              String   @id @default(uuid()) @db.Uuid
   externalId      String   @map("external_id") // ID from source (e.g., Indeed job ID)
+
+  // Job information
   title           String
   company         String
   location        String?
@@ -182,8 +184,16 @@ model Job {
   jobType         String?  @map("job_type") // full-time, part-time, contract
   remote          Boolean  @default(false)
   url             String?
-  source          String   // indeed, linkedin, remoteok, etc.
+
+  // Source metadata
+  source          String   @db.VarChar(100)   // indeed, linkedin, remoteok, etc.
   postedDate      DateTime? @map("posted_date") @db.Timestamptz
+
+  // Status fields
+  isActive        Boolean  @default(true) @map("is_active")
+  expiresAt       DateTime? @map("expires_at") @db.Timestamptz
+
+  // Tracking
   scrapedAt       DateTime @default(now()) @map("scraped_at") @db.Timestamptz
   metadata        Json?    // Additional data specific to source
 
@@ -191,6 +201,7 @@ model Job {
   @@index([source])
   @@index([postedDate])
   @@index([scrapedAt])
+  @@index([isActive])
   @@map("jobs")
 }
 
@@ -213,11 +224,29 @@ model ScraperStats {
 // Scrape Schedule Configuration
 model ScrapeSchedule {
   id              String   @id @default(uuid()) @db.Uuid
-  frequency       String   // cron expression
+
+  // Search configuration
+  source          String   @db.VarChar(100)  // e.g., "linkedin", "indeed"
+  searchQuery     String   @db.Text          // search keywords
+  location        String?  @db.VarChar(255)  // e.g., "remote", "New York, NY"
+
+  // Scheduling
+  frequency       String   @db.VarChar(50)   // cron expression
+  frequencyHours  Int      @map("frequency_hours")  // hours between runs
+  priority        Int      @default(5)       // 1-10 scale
+
+  // Status tracking
   isActive        Boolean  @default(true) @map("is_active")
   lastRun         DateTime? @map("last_run") @db.Timestamptz
+  lastScrapedAt   DateTime? @map("last_scraped_at") @db.Timestamptz
   nextRun         DateTime @map("next_run") @db.Timestamptz
+  nextScrapeAt    DateTime? @map("next_scrape_at") @db.Timestamptz
+
+  // Data
   sourcesToScrape String[] @map("sources_to_scrape")
+  metadata        Json?    @default("{}")
+
+  // Timestamps
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -227,16 +256,37 @@ model ScrapeSchedule {
 // Scrape Run History
 model ScrapeRun {
   id            String   @id @default(uuid()) @db.Uuid
+
+  // Search context
+  source        String?  @db.VarChar(100)   // e.g., "linkedin"
+  searchQuery   String?  @db.Text           // search keywords
+  location      String?  @db.VarChar(255)   // location filter
+
+  // Execution
   startTime     DateTime @default(now()) @map("start_time") @db.Timestamptz
   endTime       DateTime? @map("end_time") @db.Timestamptz
-  status        String   // running, success, failed
+  durationMs    Int?     @map("duration_ms")   // execution time
+
+  // Results
+  status        String   @db.VarChar(50)    // running, success, failed
   jobsFound     Int      @default(0) @map("jobs_found")
+  itemsFound    Int?     @map("items_found")
+  itemsStored   Int?     @map("items_stored")
+
+  // Data
   sources       String[]
+  metadata      Json?    @default("{}")
+
+  // Logging
   errorMessage  String?  @map("error_message") @db.Text
   logs          Json?
 
+  // Timestamp for logging service
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
   @@index([startTime])
   @@index([status])
+  @@index([createdAt])
   @@map("scrape_runs")
 }
 
