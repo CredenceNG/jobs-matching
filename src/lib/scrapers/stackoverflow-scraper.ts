@@ -58,7 +58,7 @@ export class StackOverflowScraper extends BaseScraper<StackOverflowJob> {
     super(config);
   }
 
-  async scrape(options: StackOverflowSearchOptions): Promise<ScrapeResult<StackOverflowJob>> {
+  async scrape(query: string, options?: any): Promise<ScrapeResult<StackOverflowJob>> {
     const startTime = Date.now();
     console.log(`🔍 [StackOverflow] Starting scrape for "${options.keywords}"`);
     console.warn(

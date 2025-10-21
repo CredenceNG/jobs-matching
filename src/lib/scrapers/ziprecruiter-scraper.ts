@@ -52,7 +52,7 @@ export class ZipRecruiterScraper extends BaseScraper<ZipRecruiterJob> {
     super(config);
   }
 
-  async scrape(options: ZipRecruiterSearchOptions): Promise<ScrapeResult<ZipRecruiterJob>> {
+  async scrape(query: string, options?: any): Promise<ScrapeResult<ZipRecruiterJob>> {
     const startTime = Date.now();
     console.log(`🔍 [ZipRecruiter] Starting scrape for "${options.keywords}"`);
 

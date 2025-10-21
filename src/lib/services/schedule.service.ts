@@ -51,22 +51,19 @@ export class ScheduleService {
    */
   async createSchedule(schedule: ScrapingSchedule): Promise<string> {
     try {
-      const nextScrapeAt = new Date();
-      nextScrapeAt.setMinutes(nextScrapeAt.getMinutes() + 5); // Start in 5 minutes
+      const nextRun = new Date();
+      nextRun.setMinutes(nextRun.getMinutes() + 5); // Start in 5 minutes
 
+      // Map new field names to old schema field names for backward compatibility
       const scheduleData = {
-        source: schedule.source,
-        searchQuery: schedule.search_query,
-        location: schedule.location,
-        frequencyHours: schedule.frequency_hours,
-        priority: schedule.priority,
+        frequency: `every_${schedule.frequency_hours}h`,
+        nextRun: nextRun,
+        sourcesToScrape: [schedule.source],
         isActive: schedule.is_active !== false,
-        nextScrapeAt: nextScrapeAt,
-        metadata: schedule.metadata || {},
       };
 
       const result = await prisma.scrapeSchedule.create({
-        data: scheduleData,
+        data: scheduleData as any,
       });
 
       console.log(

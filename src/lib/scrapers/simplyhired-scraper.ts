@@ -53,7 +53,7 @@ export class SimplyHiredScraper extends BaseScraper<SimplyHiredJob> {
     super(config);
   }
 
-  async scrape(options: SimplyHiredSearchOptions): Promise<ScrapeResult<SimplyHiredJob>> {
+  async scrape(query: string, options?: any): Promise<ScrapeResult<SimplyHiredJob>> {
     const startTime = Date.now();
     console.log(`🔍 [SimplyHired] Starting scrape for "${options.keywords}"`);
 

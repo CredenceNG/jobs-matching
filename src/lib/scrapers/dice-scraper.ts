@@ -55,7 +55,7 @@ export class DiceScraper extends BaseScraper<DiceJob> {
     super(config);
   }
 
-  async scrape(options: DiceSearchOptions): Promise<ScrapeResult<DiceJob>> {
+  async scrape(query: string, options?: any): Promise<ScrapeResult<DiceJob>> {
     const startTime = Date.now();
     console.log(`🔍 [Dice] Starting scrape for "${options.keywords}"`);
 

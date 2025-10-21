@@ -53,11 +53,17 @@ export class CareerBuilderScraper extends BaseScraper<CareerBuilderJob> {
     super(config);
   }
 
-  async scrape(options: CareerBuilderSearchOptions): Promise<ScrapeResult<CareerBuilderJob>> {
-    const startTime = Date.now();
-    console.log(`🔍 [CareerBuilder] Starting scrape for "${options.keywords}"`);
+  async scrape(query: string, options?: any): Promise<ScrapeResult<CareerBuilderJob>> {
+    // Convert query string to options format
+    const searchOptions: CareerBuilderSearchOptions = {
+      keywords: query,
+      ...options,
+    };
 
-    const maxPages = Math.min(options.maxPages || 5, 5);
+    const startTime = Date.now();
+    console.log(`🔍 [CareerBuilder] Starting scrape for "${searchOptions.keywords}"`);
+
+    const maxPages = Math.min(searchOptions.maxPages || 5, 5);
     const jobs: CareerBuilderJob[] = [];
 
     try {
@@ -65,7 +71,7 @@ export class CareerBuilderScraper extends BaseScraper<CareerBuilderJob> {
         for (let page = 1; page <= maxPages; page++) {
           console.log(`📄 [CareerBuilder] Scraping page ${page}/${maxPages}...`);
 
-          const pageJobs = await this.scrapeSearchPage(options, page);
+          const pageJobs = await this.scrapeSearchPage(searchOptions, page);
           jobs.push(...pageJobs);
 
           console.log(`✅ [CareerBuilder] Found ${pageJobs.length} jobs on page ${page}`);

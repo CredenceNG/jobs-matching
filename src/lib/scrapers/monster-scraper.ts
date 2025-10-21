@@ -52,7 +52,7 @@ export class MonsterScraper extends BaseScraper<MonsterJob> {
     super(config);
   }
 
-  async scrape(options: MonsterSearchOptions): Promise<ScrapeResult<MonsterJob>> {
+  async scrape(query: string, options?: any): Promise<ScrapeResult<MonsterJob>> {
     const startTime = Date.now();
     console.log(`🔍 [Monster] Starting scrape for "${options.keywords}"`);
 

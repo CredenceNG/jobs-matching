@@ -68,7 +68,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
    * @param options Search options
    * @returns Scraped jobs
    */
-  async scrape(options: LinkedInSearchOptions): Promise<ScrapeResult<LinkedInJob>> {
+  async scrape(query: string, options?: any): Promise<ScrapeResult<LinkedInJob>> {
     const startTime = Date.now();
 
     console.log(`🔍 [LinkedIn] Starting scrape for "${options.keywords}"`);

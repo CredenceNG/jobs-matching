@@ -83,7 +83,7 @@ export class JobStorageService {
         employment_type: job.employment_type,
         salary_min: job.salary_min,
         salary_max: job.salary_max,
-        description: job.description,
+        description: job.description || '',
         url: job.url,
         posted_date: job.posted_date,
         content_hash: contentHash,

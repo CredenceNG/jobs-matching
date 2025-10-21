@@ -48,6 +48,7 @@ export interface WorkExperience {
   description: string;
   achievements: string[];
   technologies: string[];
+  responsibilities?: string[];
 }
 
 export interface Education {
@@ -58,6 +59,7 @@ export interface Education {
   gpa?: string;
   relevantCourses: string[];
   achievements: string[];
+  honors?: string[];
 }
 
 export interface Project {
@@ -65,6 +67,7 @@ export interface Project {
   description: string;
   technologies: string[];
   url?: string;
+  link?: string;
   startDate?: string;
   endDate?: string;
 }

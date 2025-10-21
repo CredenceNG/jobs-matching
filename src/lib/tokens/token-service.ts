@@ -143,7 +143,7 @@ export class TokenService {
      */
     static async getBalanceByUserId(authUserId: string): Promise<number> {
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: authUserId },
             include: { tokens: true },
         });
 
@@ -203,7 +203,7 @@ export class TokenService {
      */
     static async getBalanceInfoByUserId(authUserId: string): Promise<TokenBalance> {
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: authUserId },
             include: { tokens: true },
         });
 
@@ -253,7 +253,7 @@ export class TokenService {
      */
     static async hasUnlimitedTokensByUserId(authUserId: string): Promise<boolean> {
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id: authUserId },
             select: { isPremium: true },
         });
 
