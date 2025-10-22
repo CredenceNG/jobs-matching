@@ -10,9 +10,16 @@ import { getSession } from '@/lib/auth/session';
 import { TokenService } from '@/lib/tokens';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
-});
+// Lazy initialization to avoid build-time errors when env vars are not available
+let openai: OpenAI | null = null;
+function getOpenAI() {
+    if (!openai) {
+        openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY || '',
+        });
+    }
+    return openai;
+}
 
 export async function POST(request: NextRequest) {
     console.log('🔵 [Resume Tailor] Generating tailored resume...');
@@ -102,7 +109,7 @@ Create a tailored resume optimization guide with:
 Format as clear sections with bullet points. Be specific and actionable.`;
 
         // Step 5: Call OpenAI API
-        const completion = await openai.chat.completions.create({
+        const completion = await getOpenAI().chat.completions.create({
             model: 'gpt-4o',
             max_tokens: 3000,
             temperature: 0.7,

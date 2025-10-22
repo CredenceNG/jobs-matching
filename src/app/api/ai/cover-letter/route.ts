@@ -10,9 +10,16 @@ import { getSession } from '@/lib/auth/session';
 import { TokenService } from '@/lib/tokens';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
-});
+// Lazy initialization to avoid build-time errors when env vars are not available
+let openai: OpenAI | null = null;
+function getOpenAI() {
+    if (!openai) {
+        openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY || '',
+        });
+    }
+    return openai;
+}
 
 export async function POST(request: NextRequest) {
     console.log('🔵 [Cover Letter] Generating AI cover letter...');
@@ -84,7 +91,7 @@ DO NOT include placeholders like [Your Name] or [Date] - write the actual conten
 Start directly with the opening paragraph.`;
 
         // Step 5: Call OpenAI API
-        const completion = await openai.chat.completions.create({
+        const completion = await getOpenAI().chat.completions.create({
             model: 'gpt-4o',
             max_tokens: 2000,
             temperature: 0.7,
