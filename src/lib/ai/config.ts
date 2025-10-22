@@ -91,12 +91,25 @@ export const anthropicClient = new Anthropic({
 });
 
 /**
- * Initialize OpenAI client
+ * Initialize OpenAI client (lazy initialization to avoid build-time errors)
  */
-export const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  // Optional: Custom base URL if using a proxy
-  baseURL: process.env.OPENAI_BASE_URL,
+let _openaiClient: OpenAI | null = null;
+export function getOpenAIClient(): OpenAI {
+  if (!_openaiClient) {
+    _openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || '',
+      // Optional: Custom base URL if using a proxy
+      baseURL: process.env.OPENAI_BASE_URL,
+    });
+  }
+  return _openaiClient;
+}
+
+// Deprecated: Use getOpenAIClient() instead
+export const openaiClient = new Proxy({} as OpenAI, {
+  get(_target, prop) {
+    return (getOpenAIClient() as any)[prop];
+  }
 });
 
 // =============================================================================

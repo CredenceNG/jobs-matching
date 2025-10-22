@@ -6,12 +6,10 @@ export class OpenAIClient {
   private client: OpenAI;
 
   constructor() {
-    if (!config.ai.openaiApiKey) {
-      throw new Error("OpenAI API key is not configured");
-    }
-
+    // Don't throw during construction to allow build-time imports
+    // Error will be thrown when actually trying to use the client
     this.client = new OpenAI({
-      apiKey: config.ai.openaiApiKey,
+      apiKey: config.ai.openaiApiKey || '',
     });
   }
 
@@ -236,5 +234,19 @@ export class OpenAIClient {
   }
 }
 
-// Singleton instance
-export const openaiClient = new OpenAIClient();
+// Lazy singleton instance to avoid build-time errors
+let _openaiClientInstance: OpenAIClient | null = null;
+export function getOpenAIClientInstance(): OpenAIClient {
+  if (!_openaiClientInstance) {
+    _openaiClientInstance = new OpenAIClient();
+  }
+  return _openaiClientInstance;
+}
+
+// Deprecated: Use getOpenAIClientInstance() instead
+// Using Proxy to maintain backward compatibility
+export const openaiClient = new Proxy({} as OpenAIClient, {
+  get(_target, prop) {
+    return (getOpenAIClientInstance() as any)[prop];
+  }
+});
