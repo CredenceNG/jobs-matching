@@ -303,7 +303,7 @@ export class JobStorageService {
       });
 
       console.log(`[JobStorage] Found ${data?.length || 0} jobs for query`);
-      return data || [];
+      return (data as any) || [];
     } catch (error) {
       console.error('[JobStorage] Search error:', error);
       throw error;
@@ -348,7 +348,7 @@ export class JobStorageService {
         },
       });
 
-      return data || [];
+      return (data as any) || [];
     } catch (error) {
       console.error('[JobStorage] Error fetching jobs by source:', error);
       throw error;
@@ -400,8 +400,8 @@ export class JobStorageService {
         total_jobs,
         active_jobs,
         jobs_by_source,
-        oldest_job_date: oldestJob?.scrapedAt || null,
-        newest_job_date: newestJob?.scrapedAt || null,
+        oldest_job_date: oldestJob?.scrapedAt?.toISOString() || null,
+        newest_job_date: newestJob?.scrapedAt?.toISOString() || null,
       };
     } catch (error) {
       console.error('[JobStorage] Error fetching stats:', error);
