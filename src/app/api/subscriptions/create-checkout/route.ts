@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -46,8 +45,6 @@ export async function POST(request: NextRequest) {
         console.log(`🔵 [Subscription Checkout] Creating ${plan} subscription for user ${user.id}`);
 
         // Step 3: Get or create Stripe customer
-        let customerId: string | undefined;
-
         // Create new Stripe customer
         // TODO: Check for existing customer once Prisma client is regenerated
         const customer = await stripe.customers.create({
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
             },
         });
-        customerId = customer.id;
+        const customerId = customer.id;
 
         // TODO: Save customer ID to database once stripeCustomerId field is available
         console.log('✅ [Subscription Checkout] Created/Using Stripe customer:', customerId);
