@@ -242,8 +242,8 @@ export class ScrapingLogService {
       }
 
       const totalScrapes = logs.length;
-      const successfulScrapes = logs.filter((l) => l.status === 'success').length;
-      const failedScrapes = logs.filter((l) => l.status === 'error').length;
+      const successfulScrapes = logs.filter((l: any) => l.status === 'success').length;
+      const failedScrapes = logs.filter((l: any) => l.status === 'error').length;
       const successRate = (successfulScrapes / totalScrapes) * 100;
 
       const totalItemsFound = logs.reduce((sum: number, log: any) => sum + log.itemsFound, 0);
@@ -359,7 +359,7 @@ export class ScrapingLogService {
       }
 
       // Check error rate
-      const errorRate = logs.filter((l) => l.status === 'error').length / logs.length;
+      const errorRate = logs.filter((l: any) => l.status === 'error').length / logs.length;
 
       if (errorRate > 0.7 && logs.length >= 5) {
         return {
@@ -369,7 +369,7 @@ export class ScrapingLogService {
       }
 
       // Check for zero items found
-      const zeroItemsCount = logs.filter((l) => l.itemsFound === 0).length;
+      const zeroItemsCount = logs.filter((l: any) => l.itemsFound === 0).length;
 
       if (zeroItemsCount > 3 && zeroItemsCount / logs.length > 0.6) {
         return {
