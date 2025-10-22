@@ -649,7 +649,7 @@ Begin with: "Create the Next.js project structure and Prisma database schema bas
 - ALWAYS check premium status before allowing premium features
 - Focus on production-ready code with proper error boundaries
 
-Please dont include:
+Please dont include following in github commit message:
 
 "🤖 Generated with Claude Code
 
