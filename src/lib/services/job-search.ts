@@ -498,7 +498,7 @@ export class JobSearchService {
             raw_data: job,
           }));
 
-          await jobStorageService.storeJobs(storedJobs);
+          await jobStorageService.storeJobs(storedJobs as any);
           console.log(`💾 [JIT] Stored ${storedJobs.length} jobs in database`);
         } catch (storeError) {
           console.warn("⚠️  Failed to store JIT results:", storeError);

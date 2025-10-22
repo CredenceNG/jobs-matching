@@ -176,7 +176,7 @@ export class LinkedInScraper extends BaseScraper<LinkedInJob> {
       await this.delay(2000 + Math.random() * 2000);
 
       // Scroll slowly to load lazy content (like a human)
-      await this.humanLikeScroll(page);
+      await this.humanLikeScroll(page as any);
 
       // Check for CAPTCHA or block page
       const bodyText = await page.evaluate(() => document.body.innerText);
