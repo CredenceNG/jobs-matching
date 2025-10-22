@@ -281,9 +281,9 @@ export class ScrapingLogService {
 
       // Get recent errors
       const recentErrors = logs
-        .filter((log) => log.status === 'error')
+        .filter((log: any) => log.status === 'error')
         .slice(0, 10)
-        .map((log) => ({
+        .map((log: any) => ({
           source: log.source || 'unknown',
           error_message: log.errorMessage || 'Unknown error',
           created_at: log.createdAt.toISOString(),
@@ -349,7 +349,7 @@ export class ScrapingLogService {
 
       // Check consecutive failures
       const recentLogs = logs.slice(0, 5);
-      const allFailed = recentLogs.every((log) => log.status === 'error');
+      const allFailed = recentLogs.every((log: any) => log.status === 'error');
 
       if (allFailed && recentLogs.length >= 3) {
         return {
