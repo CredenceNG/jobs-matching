@@ -169,7 +169,7 @@ export function getScrapersForLocation(location?: string): string[] {
   const globalBoards = ['remoteok', 'linkedin', 'stackoverflow'];
 
   // Combine recommended boards with global boards
-  const allBoards = [...new Set([...config.recommendedBoards, ...globalBoards])];
+  const allBoards = Array.from(new Set([...config.recommendedBoards, ...globalBoards]));
   console.log(`📋 [Location Mapper] Final scrapers:`, allBoards);
 
   return allBoards;
