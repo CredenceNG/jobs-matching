@@ -443,13 +443,29 @@ export async function POST(request: NextRequest) {
     console.log("🎯 STEP 3B: Scoring jobs with AI...");
 
     // Score each job using AI, passing user preferences for location/role/type matching
-    const jobScores = await aiJobScorer.scoreJobs(
-      normalizedJobs.slice(0, 20), // Limit to top 20 for cost efficiency
-      resumeAnalysis,
-      userPreferences || undefined
-    );
-
-    console.log(`✅ AI Scoring Complete!`);
+    let jobScores;
+    try {
+      jobScores = await aiJobScorer.scoreJobs(
+        normalizedJobs.slice(0, 20), // Limit to top 20 for cost efficiency
+        resumeAnalysis,
+        userPreferences || undefined
+      );
+      console.log(`✅ AI Scoring Complete!`);
+    } catch (scoringError) {
+      console.error("❌ AI Job Scoring Failed:", {
+        error: scoringError instanceof Error ? scoringError.message : 'Unknown error',
+        stack: scoringError instanceof Error ? scoringError.stack : undefined,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to score jobs with AI",
+          message: scoringError instanceof Error ? scoringError.message : "Job scoring service unavailable",
+          details: "The AI job scoring service encountered an error. Please try again.",
+        },
+        { status: 500 }
+      );
+    }
 
     // Combine jobs with their AI scores
     const scoredJobs = normalizedJobs.slice(0, 20).map((job, index) => {

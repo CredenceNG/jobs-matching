@@ -47,10 +47,15 @@ export class AIJobScorer {
     candidateProfile: ResumeAnalysis,
     userPreferences?: UserPreferences
   ): Promise<JobScore> {
+    console.log(`[AI Job Scorer] Starting scoring for job: ${job.title} at ${job.company}`);
+
     const prompt = this.buildScoringPrompt(job, candidateProfile, userPreferences);
 
     try {
+      console.log('[AI Job Scorer] Getting AI service...');
       const aiService = getAIService();
+
+      console.log('[AI Job Scorer] Making AI request for job scoring...');
       const response = await aiService.makeRequest<string>(
         "anonymous-user",
         "job_matching" as any,
@@ -61,7 +66,16 @@ export class AIJobScorer {
         }
       );
 
+      console.log('[AI Job Scorer] AI request completed', {
+        success: response.success,
+        hasData: !!response.data,
+        dataLength: response.data?.length || 0,
+      });
+
       if (!response.success || !response.data) {
+        console.warn('[AI Job Scorer] AI request failed, using fallback scoring', {
+          error: response.error,
+        });
         // Fallback to basic scoring if AI fails
         return this.basicScoring(job, candidateProfile);
       }
@@ -69,6 +83,7 @@ export class AIJobScorer {
       // Clean AI response (remove markdown code blocks if present)
       let cleanedData = response.data.trim();
       if (cleanedData.startsWith('```')) {
+        console.log('[AI Job Scorer] Removing markdown code blocks from response');
         // Remove markdown code blocks: ```json\n{...}\n``` or ```{...}```
         cleanedData = cleanedData
           .replace(/^```json?\n?/i, '')
@@ -76,12 +91,33 @@ export class AIJobScorer {
           .trim();
       }
 
+      console.log('[AI Job Scorer] Attempting to parse AI response as JSON...', {
+        cleanedDataLength: cleanedData.length,
+        preview: cleanedData.substring(0, 200),
+      });
+
       // Parse cleaned AI response
       const score = JSON.parse(cleanedData);
-      return this.validateScore(score, job.id);
+
+      console.log('[AI Job Scorer] Successfully parsed AI response, validating...');
+      const validatedScore = this.validateScore(score, job.id);
+
+      console.log('[AI Job Scorer] Score validated successfully', {
+        overallScore: validatedScore.overallScore,
+        recommendation: validatedScore.recommendation,
+      });
+
+      return validatedScore;
     } catch (error) {
-      console.error("AI job scoring error:", error);
+      console.error("[AI Job Scorer] CRITICAL ERROR during job scoring:", {
+        jobTitle: job.title,
+        company: job.company,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+      });
       // Fallback to basic scoring
+      console.log('[AI Job Scorer] Falling back to basic scoring...');
       return this.basicScoring(job, candidateProfile);
     }
   }
