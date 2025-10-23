@@ -316,7 +316,7 @@ export default function ResumeJobSearch() {
                 } else {
                     // Log technical details but show friendly message
                     console.error('[Resume Jobs] Technical error details:', error.message);
-                    errorMessage = 'We're experiencing technical difficulties processing your resume. Our team has been notified. Please try again shortly.';
+                    errorMessage = 'We are experiencing technical difficulties processing your resume. Our team has been notified. Please try again shortly.';
                 }
             }
 
