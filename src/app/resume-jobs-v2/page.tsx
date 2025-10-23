@@ -377,6 +377,15 @@ export default function ResumeJobSearchV2() {
                 body: formData,
             })
 
+            // Check for timeout (504) BEFORE parsing
+            if (response.status === 504) {
+                throw new Error('Your resume is taking longer than expected to process. This usually means we found many great matches! Please try again.');
+            }
+
+            if (response.status >= 500) {
+                throw new Error('Our servers are experiencing high demand. Please try again in a few moments.');
+            }
+
             updateStepStatus(1, 'completed')
             setCurrentStep(2)
 
@@ -394,7 +403,24 @@ export default function ResumeJobSearchV2() {
                 updateScraperProgress(scraper, { status: 'completed', progress: 100 })
             }
 
-            const data = await response.json()
+            // Safe JSON parsing with error handling
+            const responseText = await response.text();
+
+            // Handle empty response
+            if (!responseText || responseText.trim().length === 0) {
+                throw new Error('We lost connection while processing your resume. Please try again.');
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (jsonError) {
+                // Specific error for timeouts
+                if (response.status === 502 || response.status === 503) {
+                    throw new Error('The server took too long to respond. Please try again.');
+                }
+                throw new Error('We received an incomplete response from the server. Please try again in a moment.');
+            }
 
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to process resume')
