@@ -259,11 +259,17 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
 /**
  * Search for real jobs using serverless-compatible APIs
  *
- * This approach:
- * 1. Uses RemoteOK API (completely free, no key needed)
- * 2. Falls back to JSearch API (RapidAPI) if available
- * 3. Works in Netlify serverless environment (no Puppeteer/Chrome needed)
- * 4. Falls back to mock data only if all APIs fail
+ * Multi-layer search strategy (fastest to slowest):
+ * 1. Cache (< 100ms) - Previously searched jobs
+ * 2. Database (< 500ms) - Recently scraped jobs
+ * 3. JIT Scraping (5-30s) - Will fail in Netlify, skip to APIs
+ * 4. API Fallbacks:
+ *    a) RemoteOK API (free, remote jobs only)
+ *    b) Adzuna API (all job types: remote, on-site, hybrid)
+ *    c) JSearch API (RapidAPI, all job types)
+ *
+ * Works in Netlify serverless environment (no Puppeteer/Chrome needed)
+ * Falls back to mock data only if all APIs fail
  *
  * @returns Object with { jobs: any[], usedMockData: boolean }
  * The usedMockData flag indicates if we fell back to mock data
@@ -282,9 +288,10 @@ async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMo
     console.log(`  🔍 Primary search: "${primaryQuery}"`)
 
     // Search using API-based service (works in serverless)
+    // Will try: RemoteOK → Adzuna → JSearch (covers all job types)
     const result = await jobSearchService.searchJobs({
-      keywords: primaryQuery,
-      remote: true // Prefer remote jobs for broader results
+      keywords: primaryQuery
+      // No remote filter - let APIs return all job types (remote, on-site, hybrid)
     })
 
     if (result.jobs && result.jobs.length > 0) {
