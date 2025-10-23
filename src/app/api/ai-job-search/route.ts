@@ -256,13 +256,19 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
 // STEP 3: SEARCH JOBS VIA API
 // =============================================================================
 
-async function searchJobsViaAPI(queries: string[]): Promise<any[]> {
+/**
+ * Searches job boards via API and returns results
+ *
+ * @returns Object with { jobs: any[], usedMockData: boolean }
+ * The usedMockData flag indicates if we fell back to mock data
+ */
+async function searchJobsViaAPI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
   console.log('🌐 Searching job boards via API...')
 
   // Check if RapidAPI key is configured
   if (!RAPIDAPI_KEY) {
     console.warn('⚠️  RAPIDAPI_KEY not configured, using mock data')
-    return getMockJobs(queries)
+    return { jobs: getMockJobs(queries), usedMockData: true }
   }
 
   const allJobs: any[] = []
@@ -298,11 +304,11 @@ async function searchJobsViaAPI(queries: string[]): Promise<any[]> {
 
   if (allJobs.length === 0) {
     console.log('⚠️  No jobs found via API, using mock data')
-    return getMockJobs(queries)
+    return { jobs: getMockJobs(queries), usedMockData: true }
   }
 
   console.log(`✅ Total jobs collected: ${allJobs.length}`)
-  return allJobs
+  return { jobs: allJobs, usedMockData: false }
 }
 
 // =============================================================================
@@ -721,12 +727,62 @@ export async function POST(request: NextRequest) {
     const searchQueries = await generateSearchQueries(parsedResume, suggestedRoles)
 
     // STEP 3: Search jobs via API
-    const rawJobs = await searchJobsViaAPI(searchQueries)
+    const searchResult = await searchJobsViaAPI(searchQueries)
+    const { jobs: rawJobs, usedMockData } = searchResult
 
-    // STEP 4: Match and rank jobs
+    // =========================================================================
+    // OPTIMIZATION: Skip expensive AI operations when using mock data
+    // This prevents 504 timeouts by avoiding 5-10 seconds of AI matching
+    // =========================================================================
+    if (usedMockData) {
+      console.log('⚡ FAST PATH: Returning pre-formatted mock data to avoid timeout')
+
+      const mockMatches = rawJobs.map((job, index) => ({
+        id: job.job_id,
+        title: job.job_title,
+        company: job.employer_name,
+        location: job.job_city && job.job_state
+          ? `${job.job_city}, ${job.job_state}`
+          : job.job_country || 'Remote',
+        description: job.job_description,
+        salary: job.job_min_salary && job.job_max_salary
+          ? `$${job.job_min_salary.toLocaleString()}-$${job.job_max_salary.toLocaleString()}`
+          : undefined,
+        url: job.job_apply_link,
+        matchScore: 92 - (index * 4), // Descending scores: 92, 88, 84, 80, 76
+        matchingSkills: parsedResume.skills.slice(0, 5),
+        missingSkills: ['Docker', 'Kubernetes'],
+        recommendation: index === 0 ? 'Excellent Match' : index === 1 ? 'Strong Match' : 'Good Match',
+        source: job.job_publisher || 'Mock Data',
+        postedDate: job.job_posted_at_datetime_utc,
+        remote: job.job_is_remote || false
+      }))
+
+      const mockRecommendations = [
+        'Your skills align well with these positions - focus on highlighting your key technical abilities',
+        'Consider tailoring your resume to emphasize relevant project experience',
+        'These remote-friendly roles offer strong opportunities for career growth'
+      ]
+
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2)
+      console.log(`✅ AI Job Search (mock data path) completed in ${duration}s\n`)
+
+      return NextResponse.json({
+        success: true,
+        searchQueries,
+        matches: mockMatches,
+        recommendations: mockRecommendations,
+        totalFound: rawJobs.length,
+        parsedResume,
+        processingTime: duration,
+        usedMockData: true
+      })
+    }
+
+    // STEP 4: Match and rank jobs (only for real API data)
     const matches = await matchAndRankJobs(parsedResume, rawJobs)
 
-    // STEP 5: Generate recommendations
+    // STEP 5: Generate recommendations (only for real API data)
     const recommendations = await generateRecommendations(parsedResume, matches)
 
     // STEP 6 (OPTIONAL): Use recommendations to refine search
@@ -740,7 +796,8 @@ export async function POST(request: NextRequest) {
       console.log(`   Generated ${refinedQueries.length} refined queries:`, refinedQueries)
 
       if (refinedQueries.length > 0) {
-        const refinedRawJobs = await searchJobsViaAPI(refinedQueries)
+        const refinedSearchResult = await searchJobsViaAPI(refinedQueries)
+        const refinedRawJobs = refinedSearchResult.jobs
         const refinedJobMatches = await matchAndRankJobs(parsedResume, refinedRawJobs)
 
         // Merge with existing matches, remove duplicates, and re-sort
