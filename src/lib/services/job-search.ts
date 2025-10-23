@@ -5,6 +5,28 @@
  * No fallbacks - only real API data or clear error messages.
  */
 
+/**
+ * Helper function to add timeout to any promise
+ * Prevents API calls from hanging indefinitely and causing 504 errors
+ *
+ * @param promise - The promise to add timeout to
+ * @param timeoutMs - Timeout in milliseconds
+ * @param errorMessage - Error message to throw on timeout
+ * @returns Promise that rejects if timeout is reached first
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    ),
+  ]);
+}
+
 export interface JobSearchFilters {
   keywords?: string;
   location?: string;
@@ -375,6 +397,11 @@ export class JobSearchService {
   private jsearch = new JSearchAPI();
   private adzuna = new AdzunaAPI();
 
+  // Timeout constants to prevent 504 Gateway Timeout errors
+  private readonly API_TIMEOUT_MS = 3000; // 3 seconds max per API call
+  private readonly SCRAPER_TIMEOUT_MS = 8000; // 8 seconds max for scraping
+  private readonly DATABASE_TIMEOUT_MS = 2000; // 2 seconds max for database queries
+
   /**
    * Search for jobs using hybrid architecture
    * Flow: Cache → Database → JIT Scraping → API Fallback
@@ -424,15 +451,19 @@ export class JobSearchService {
     try {
       const { jobStorageService } = await import('./job-storage.service');
 
-      const dbResults = await jobStorageService.searchJobs({
-        query: filters.keywords,
-        location: filters.location,
-        employment_type: filters.jobType?.[0],
-        min_salary: filters.salary?.min,
-        max_age_hours: 24, // Only recent jobs (last 24 hours)
-        limit: 20,
-        offset: (page - 1) * 20,
-      });
+      const dbResults = await withTimeout(
+        jobStorageService.searchJobs({
+          query: filters.keywords,
+          location: filters.location,
+          employment_type: filters.jobType?.[0],
+          min_salary: filters.salary?.min,
+          max_age_hours: 24, // Only recent jobs (last 24 hours)
+          limit: 20,
+          offset: (page - 1) * 20,
+        }),
+        this.DATABASE_TIMEOUT_MS,
+        'Database search timeout - query took too long'
+      );
 
       if (dbResults.length > 0) {
         console.log(`✅ [Database HIT] Found ${dbResults.length} jobs`);
@@ -471,11 +502,15 @@ export class JobSearchService {
       // Use fast scrapers for JIT (avoid LinkedIn which is slow)
       const { scraperJobSearchService } = await import('./scraper-job-search');
 
-      const scraperResults = await scraperJobSearchService.searchJobs(filters, {
-        sources: ['indeed', 'remoteok', 'ziprecruiter', 'monster'], // Fast sources only
-        parallel: true,
-        maxResultsPerSource: 20,
-      });
+      const scraperResults = await withTimeout(
+        scraperJobSearchService.searchJobs(filters, {
+          sources: ['indeed', 'remoteok', 'ziprecruiter', 'monster'], // Fast sources only
+          parallel: true,
+          maxResultsPerSource: 20,
+        }),
+        this.SCRAPER_TIMEOUT_MS,
+        'JIT scraping timeout - scrapers took too long'
+      );
 
       if (scraperResults.jobs && scraperResults.jobs.length > 0) {
         console.log(
@@ -526,7 +561,11 @@ export class JobSearchService {
     // Try RemoteOK API first (free, no API key required)
     try {
       console.log("🚀 [API] Trying RemoteOK API...");
-      const result = await this.remoteOK.searchJobs(filters, page);
+      const result = await withTimeout(
+        this.remoteOK.searchJobs(filters, page),
+        this.API_TIMEOUT_MS,
+        'RemoteOK API timeout after 3 seconds'
+      );
 
       if (result.jobs && result.jobs.length > 0) {
         console.log(`✅ [API] Found ${result.jobs.length} jobs from RemoteOK`);
@@ -540,7 +579,11 @@ export class JobSearchService {
     if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY) {
       try {
         console.log("🚀 [API] Trying Adzuna API...");
-        const result = await this.adzuna.searchJobs(filters, page);
+        const result = await withTimeout(
+          this.adzuna.searchJobs(filters, page),
+          this.API_TIMEOUT_MS,
+          'Adzuna API timeout after 3 seconds'
+        );
 
         if (result.jobs && result.jobs.length > 0) {
           console.log(`✅ [API] Found ${result.jobs.length} jobs from Adzuna`);
@@ -555,7 +598,11 @@ export class JobSearchService {
     if (process.env.RAPIDAPI_KEY) {
       try {
         console.log("🚀 [API] Trying JSearch API...");
-        const result = await this.jsearch.searchJobs(filters, page);
+        const result = await withTimeout(
+          this.jsearch.searchJobs(filters, page),
+          this.API_TIMEOUT_MS,
+          'JSearch API timeout after 3 seconds'
+        );
 
         if (result.jobs && result.jobs.length > 0) {
           console.log(`✅ [API] Found ${result.jobs.length} jobs from JSearch`);
