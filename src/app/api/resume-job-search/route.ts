@@ -369,7 +369,25 @@ export async function POST(request: NextRequest) {
     // STEP 2: AI RESUME ANALYSIS
     // ========================================================================
     console.log("🤖 STEP 2: Analyzing resume with AI...");
-    const resumeAnalysis = await aiResumeAnalyzer.analyzeResume(resumeText);
+    let resumeAnalysis;
+    try {
+      resumeAnalysis = await aiResumeAnalyzer.analyzeResume(resumeText);
+      console.log(`✅ AI Analysis Complete:`);
+    } catch (aiError) {
+      console.error("❌ AI Resume Analysis Failed:", {
+        error: aiError instanceof Error ? aiError.message : 'Unknown error',
+        stack: aiError instanceof Error ? aiError.stack : undefined,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to analyze resume with AI",
+          message: aiError instanceof Error ? aiError.message : "AI service unavailable",
+          details: "The AI service encountered an error while analyzing your resume. Please try again.",
+        },
+        { status: 500 }
+      );
+    }
 
     console.log(`✅ AI Analysis Complete:`);
     console.log(`   - Skills found: ${resumeAnalysis.skills.length}`);

@@ -65,12 +65,26 @@ export class AIService {
   ): Promise<AIResponse<T>> {
     const requestId = generateRequestId();
 
+    console.log('[AI Service] Starting AI request', {
+      requestId,
+      userId,
+      feature,
+      promptLength: prompt.length,
+      options: {
+        model: options.model,
+        complexity: options.complexity,
+        temperature: options.temperature,
+        maxTokens: options.maxTokens,
+      },
+    });
+
     try {
       // Handle anonymous users without database lookups
       const isAnonymous = userId === "anonymous-user" || !userId;
       let subscriptionStatus: "free" | "premium" = "free";
 
       if (!isAnonymous) {
+        console.log('[AI Service] Checking user subscription status...');
         // Get user's subscription status from database (Prisma/Neon)
         const user = await prisma.user.findUnique({
           where: { id: userId },
@@ -78,6 +92,7 @@ export class AIService {
         });
 
         subscriptionStatus = user?.isPremium ? "premium" : "free";
+        console.log('[AI Service] User subscription status:', subscriptionStatus);
 
         // Check user quotas before making request (only for registered users)
         await this.checkUserQuotas(userId, subscriptionStatus);
@@ -88,10 +103,13 @@ export class AIService {
         options.model ||
         getRecommendedModel(feature, subscriptionStatus, options.complexity);
 
+      console.log('[AI Service] Selected model:', model);
+
       // Check cache first (unless bypassed)
       if (!options.bypassCache) {
         const cached = await this.getCachedResponse<T>(feature, userId, prompt);
         if (cached) {
+          console.log('[AI Service] Cache hit - returning cached response');
           return {
             ...cached,
             cached: true,
@@ -100,6 +118,7 @@ export class AIService {
         }
       }
 
+      console.log('[AI Service] No cache found - executing AI request...');
       // Make the AI request
       const response = await this.executeAIRequest<T>(
         model,
@@ -109,12 +128,20 @@ export class AIService {
         options.maxTokens
       );
 
+      console.log('[AI Service] AI request completed successfully', {
+        contentLength: typeof response.content === 'string' ? response.content.length : 'N/A',
+        inputTokens: response.inputTokens,
+        outputTokens: response.outputTokens,
+      });
+
       // Calculate cost and track usage
       const cost = calculateAICost(
         model,
         response.inputTokens,
         response.outputTokens
       );
+
+      console.log('[AI Service] Request cost:', `$${cost.toFixed(4)}`);
 
       await this.trackAIUsage({
         userId,
@@ -142,6 +169,8 @@ export class AIService {
         },
       });
 
+      console.log('[AI Service] Returning successful response');
+
       return {
         success: true,
         data: response.content,
@@ -155,7 +184,12 @@ export class AIService {
         },
       };
     } catch (error) {
-      console.error("AI Service Error:", error);
+      console.error('[AI Service] CRITICAL ERROR in makeRequest:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        requestId,
+      });
 
       // Track failed request
       await this.trackAIUsage({
@@ -277,6 +311,14 @@ export class AIService {
     inputTokens: number;
     outputTokens: number;
   }> {
+    console.log('[AI Service - OpenAI] Starting OpenAI request...', {
+      model,
+      promptLength: prompt.length,
+      hasSystemPrompt: !!systemPrompt,
+      temperature,
+      maxTokens,
+    });
+
     try {
       const messages: any[] = [];
 
@@ -286,6 +328,7 @@ export class AIService {
 
       messages.push({ role: "user", content: prompt });
 
+      console.log('[AI Service - OpenAI] Calling OpenAI API...');
       const response = await openaiClient.chat.completions.create({
         model,
         messages,
@@ -293,10 +336,26 @@ export class AIService {
         max_tokens: maxTokens,
       });
 
+      console.log('[AI Service - OpenAI] OpenAI API response received', {
+        hasChoices: !!response.choices,
+        choicesCount: response.choices?.length || 0,
+        hasUsage: !!response.usage,
+        finishReason: response.choices?.[0]?.finish_reason,
+      });
+
       const content = response.choices[0]?.message?.content;
       if (!content) {
+        console.error('[AI Service - OpenAI] No content in OpenAI response', {
+          response: JSON.stringify(response, null, 2),
+        });
         throw new Error("No content in OpenAI response");
       }
+
+      console.log('[AI Service - OpenAI] Successfully extracted content', {
+        contentLength: content.length,
+        inputTokens: response.usage?.prompt_tokens || 0,
+        outputTokens: response.usage?.completion_tokens || 0,
+      });
 
       return {
         content: content as T,
@@ -304,6 +363,12 @@ export class AIService {
         outputTokens: response.usage?.completion_tokens || 0,
       };
     } catch (error) {
+      console.error('[AI Service - OpenAI] OpenAI request failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+      });
+
       if (error instanceof Error) {
         throw new AIModelUnavailableError(model);
       }
