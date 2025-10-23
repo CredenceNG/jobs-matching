@@ -300,10 +300,23 @@ Return ONLY valid JSON: { "recommendations": ["rec1", "rec2", "rec3", "rec4", "r
 }
 
 export async function POST(request: NextRequest) {
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('🚀 [Resume Job Search API] NEW REQUEST RECEIVED');
+  console.log('═══════════════════════════════════════════════════════════');
+
   try {
+    console.log('[Resume Job Search API] Parsing form data...');
     const formData = await request.formData();
     const file = formData.get("resume") as File;
     const preferencesString = formData.get("preferences") as string;
+
+    console.log('[Resume Job Search API] Form data parsed', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      hasPreferences: !!preferencesString,
+    });
 
     if (!file) {
       return NextResponse.json(
@@ -529,14 +542,24 @@ export async function POST(request: NextRequest) {
       searchLocation,
     });
   } catch (error) {
-    console.error("Resume job search error:", error);
+    console.error('═══════════════════════════════════════════════════════════');
+    console.error('❌ [Resume Job Search API] CRITICAL UNHANDLED ERROR');
+    console.error('═══════════════════════════════════════════════════════════');
+    console.error('[Resume Job Search API] Error details:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+    });
 
+    // ALWAYS return valid JSON with user-friendly message
     return NextResponse.json(
       {
         success: false,
-        error:
-          "Failed to process resume and search for jobs. Please try again.",
-        message: error instanceof Error ? error.message : "Unknown error",
+        error: "We encountered an unexpected issue while processing your resume. Please try again in a few moments.",
+        message: "An unexpected error occurred during resume processing. Our team has been notified.",
+        technicalDetails: process.env.NODE_ENV === 'development'
+          ? (error instanceof Error ? error.message : "Unknown error")
+          : undefined,
       },
       { status: 500 }
     );

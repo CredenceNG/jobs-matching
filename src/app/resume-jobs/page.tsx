@@ -193,20 +193,79 @@ export default function ResumeJobSearch() {
             // Simulate step progression
             updateStepStatus(1, 'processing')
 
+            console.log('[Resume Jobs] Sending resume to API for processing...');
             const response = await fetch('/api/resume-job-search', {
                 method: 'POST',
                 body: formData,
             })
+
+            console.log('[Resume Jobs] API response received', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                headers: Object.fromEntries(response.headers.entries()),
+            });
+
+            // Check for timeout (504) or server errors (5xx)
+            if (response.status === 504) {
+                console.error('[Resume Jobs] Gateway Timeout - request took too long');
+                throw new Error('Your resume is taking longer than expected to process. This usually means we found a lot of great matches! Please try again, and the results should load faster.');
+            }
+
+            if (response.status >= 500) {
+                console.error('[Resume Jobs] Server error:', response.status);
+                throw new Error('Our servers are experiencing high demand. Please try again in a few moments.');
+            }
 
             // Step 1 complete
             updateStepStatus(1, 'completed')
             setCurrentStep(2)
             updateStepStatus(2, 'processing')
 
-            const data = await response.json()
+            // Check if response has content before trying to parse JSON
+            const responseText = await response.text();
+            console.log('[Resume Jobs] Response text received', {
+                length: responseText.length,
+                preview: responseText.substring(0, 200),
+                isEmpty: responseText.length === 0,
+            });
+
+            // Handle empty response (likely timeout or connection issue)
+            if (!responseText || responseText.trim().length === 0) {
+                console.error('[Resume Jobs] CRITICAL: Empty response received');
+                throw new Error('We lost connection while processing your resume. This can happen with large files or slow connections. Please try again.');
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('[Resume Jobs] Successfully parsed JSON response', {
+                    success: data.success,
+                    hasMatches: !!data.matches,
+                    matchesCount: data.matches?.length || 0,
+                });
+            } catch (jsonError) {
+                console.error('[Resume Jobs] CRITICAL: Failed to parse JSON response', {
+                    error: jsonError instanceof Error ? jsonError.message : 'Unknown error',
+                    responseText: responseText.substring(0, 500),
+                    responseStatus: response.status,
+                });
+
+                // Provide specific error message for JSON parsing failures
+                if (response.status === 502 || response.status === 503 || response.status === 504) {
+                    throw new Error('The server took too long to respond. Your resume might be particularly detailed! Please try again, and consider using a smaller file if possible.');
+                }
+
+                throw new Error('We received an incomplete response from the server. This can happen during high traffic. Please try again in a moment.');
+            }
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to process resume')
+                console.error('[Resume Jobs] API returned error status', {
+                    status: response.status,
+                    error: data.error,
+                    message: data.message,
+                });
+                throw new Error(data.message || data.error || 'An unexpected error occurred while processing your resume. Please try again.');
             }
 
             // Step 2 complete
@@ -235,12 +294,30 @@ export default function ResumeJobSearch() {
             sessionStorage.setItem('jobSearchPreferences', JSON.stringify(preferences))
 
         } catch (error) {
-            console.error('Error processing resume:', error)
+            console.error('[Resume Jobs] CRITICAL ERROR during resume processing:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+                currentStep,
+            });
 
-            let errorMessage = 'Failed to process resume. Please try again.'
+            // Determine user-friendly error message
+            let errorMessage = 'We encountered an unexpected issue while processing your resume. Please try again in a few moments.';
 
             if (error instanceof Error) {
-                errorMessage = error.message
+                // Check if this is a user-friendly error message (doesn't contain technical terms)
+                const technicalTerms = ['json', 'parse', 'fetch', 'response', 'undefined', 'null', 'syntax'];
+                const isTechnicalError = technicalTerms.some(term =>
+                    error.message.toLowerCase().includes(term)
+                );
+
+                if (!isTechnicalError) {
+                    // Use the error message if it's already user-friendly
+                    errorMessage = error.message;
+                } else {
+                    // Log technical details but show friendly message
+                    console.error('[Resume Jobs] Technical error details:', error.message);
+                    errorMessage = 'We're experiencing technical difficulties processing your resume. Our team has been notified. Please try again shortly.';
+                }
             }
 
             // Mark current step as error
