@@ -641,6 +641,50 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // =========================================================================
+    // FAST PATH: Return mock data immediately if no API keys configured
+    // This prevents timeouts by skipping all AI calls
+    // =========================================================================
+    if (!RAPIDAPI_KEY || !anthropic.apiKey) {
+      console.warn('⚡ FAST PATH: No API keys configured, returning mock data immediately')
+
+      const mockMatches = getMockJobs([]).map((job, index) => ({
+        id: job.job_id,
+        title: job.job_title,
+        company: job.employer_name,
+        location: job.job_city || 'Remote',
+        description: job.job_description,
+        salary: job.job_min_salary ? `$${job.job_min_salary} - $${job.job_max_salary}` : undefined,
+        url: job.job_apply_link,
+        matchScore: 95 - (index * 5), // Descending scores: 95, 90, 85, 80, 75
+        matchingSkills: ['JavaScript', 'Python', 'React', 'Node.js'],
+        missingSkills: ['AWS', 'Docker'],
+        recommendation: index === 0 ? 'Excellent Match' : index === 1 ? 'Strong Match' : 'Good Match',
+        source: job.job_publisher || 'Mock Data',
+        postedDate: job.job_posted_at_datetime_utc,
+        remote: job.job_is_remote || false
+      }))
+
+      return NextResponse.json({
+        success: true,
+        searchQueries: ['Software Engineer', 'Full Stack Developer', 'Backend Developer'],
+        matches: mockMatches,
+        recommendations: [
+          'Consider roles that leverage your existing technical skills',
+          'Highlight your experience with modern frameworks in applications',
+          'Target companies offering remote work opportunities'
+        ],
+        totalFound: mockMatches.length,
+        parsedResume: {
+          skills: ['JavaScript', 'Python', 'React', 'Node.js', 'SQL'],
+          experience: ['Software Engineer', 'Full Stack Developer'],
+          yearsExperience: 5
+        },
+        processingTime: ((Date.now() - startTime) / 1000).toFixed(2),
+        usedMockData: true
+      })
+    }
+
     // Extract resume text
     console.log(`📄 Processing file: ${resumeFile.name} (${resumeFile.type})`)
 
