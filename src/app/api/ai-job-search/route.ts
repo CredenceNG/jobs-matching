@@ -257,69 +257,68 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
 // =============================================================================
 
 /**
- * Search for real jobs using OpenWeb Ninja API
+ * Search for real jobs using web scraping (no API keys needed)
  *
  * This approach:
- * 1. Uses OpenWeb Ninja API for real job postings
- * 2. Returns structured job data
- * 3. Falls back to mock data only if API fails
+ * 1. Uses Puppeteer scrapers to fetch real jobs from multiple boards
+ * 2. Scrapes: Indeed, LinkedIn, RemoteOK, Glassdoor, etc.
+ * 3. Completely free - no API costs
+ * 4. Falls back to mock data only if all scrapers fail
  *
  * @returns Object with { jobs: any[], usedMockData: boolean }
  * The usedMockData flag indicates if we fell back to mock data
  */
 async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
-  console.log('🔍 Searching for real jobs via API...')
+  console.log('🔍 Searching for real jobs via web scraping...')
 
   try {
-    // Import the OpenWeb Ninja API
-    const { OpenWebNinjaAPI } = await import('@/lib/services/openweb-ninja-api')
-    const jobAPI = new OpenWebNinjaAPI()
+    // Import the scraper-based job search service
+    const { scraperJobSearchService } = await import('@/lib/services/scraper-job-search')
 
     const allJobs: any[] = []
 
-    // Search with first 2 queries to balance results
-    for (const query of queries.slice(0, 2)) {
-      try {
-        console.log(`  🔍 Searching: "${query}"`)
+    // Use first query as primary search (most relevant)
+    const primaryQuery = queries[0]
+    console.log(`  🔍 Primary search: "${primaryQuery}"`)
 
-        const jobs = await jobAPI.searchJobs(query)
-
-        if (jobs && jobs.length > 0) {
-          // Transform to expected format
-          const transformed = jobs.map(job => ({
-            job_id: job.id,
-            job_title: job.title,
-            employer_name: job.company,
-            job_city: job.location.split(',')[0]?.trim() || job.location,
-            job_state: job.location.split(',')[1]?.trim() || '',
-            job_country: job.location.split(',')[2]?.trim() || 'US',
-            job_description: job.description,
-            job_min_salary: job.salary ? parseInt(job.salary.replace(/\D/g, '')) || undefined : undefined,
-            job_max_salary: job.salary ? (parseInt(job.salary.replace(/\D/g, '')) * 1.2) || undefined : undefined,
-            job_is_remote: job.type?.toLowerCase().includes('remote') || false,
-            job_apply_link: job.url || '',
-            job_publisher: job.source || 'OpenWeb Ninja',
-            job_posted_at_datetime_utc: job.posted_date || new Date().toISOString()
-          }))
-
-          allJobs.push(...transformed)
-          console.log(`  ✓ Found ${jobs.length} jobs for "${query}"`)
-        }
-
-        // Small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-      } catch (error) {
-        console.error(`  ✗ Search failed for "${query}":`, error)
+    // Search using scrapers (uses location-aware scraper selection)
+    const result = await scraperJobSearchService.searchJobs(
+      { keywords: primaryQuery },
+      {
+        parallel: true, // Run scrapers in parallel for faster results
+        maxResultsPerSource: 5, // Limit results per scraper to avoid timeout
       }
+    )
+
+    if (result.jobs && result.jobs.length > 0) {
+      // Transform scraper results to expected format
+      const transformed = result.jobs.map(job => ({
+        job_id: job.id,
+        job_title: job.title,
+        employer_name: job.company,
+        job_city: job.location.split(',')[0]?.trim() || job.location,
+        job_state: job.location.split(',')[1]?.trim() || '',
+        job_country: job.location.split(',')[2]?.trim() || 'US',
+        job_description: job.description,
+        job_min_salary: job.salary ? parseInt(job.salary.replace(/\D/g, '')) || undefined : undefined,
+        job_max_salary: job.salary ? (parseInt(job.salary.replace(/\D/g, '')) * 1.2) || undefined : undefined,
+        job_is_remote: job.type?.toLowerCase().includes('remote') || false,
+        job_apply_link: job.url || '',
+        job_publisher: job.source || 'Web Scraper',
+        job_posted_at_datetime_utc: job.posted_date || new Date().toISOString()
+      }))
+
+      allJobs.push(...transformed)
+      console.log(`  ✓ Found ${transformed.length} jobs from ${result.sourcesUsed.length} sources`)
+      console.log(`  📊 Sources used: ${result.sourcesUsed.join(', ')}`)
     }
 
     if (allJobs.length === 0) {
-      console.log('⚠️  No jobs found via API, using mock data')
+      console.log('⚠️  No jobs found via scraping, using mock data')
       return { jobs: getMockJobs(queries), usedMockData: true }
     }
 
-    console.log(`✅ Collected ${allJobs.length} total jobs`)
+    console.log(`✅ Collected ${allJobs.length} total jobs (scraped in ${(result.scrapeDuration / 1000).toFixed(2)}s)`)
     return { jobs: allJobs, usedMockData: false }
 
   } catch (error) {
