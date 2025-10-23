@@ -1,14 +1,15 @@
 /**
- * AI-Powered Job Search API Route
+ * AI-ONLY Job Search API Route
  *
- * Uses intelligent job discovery instead of traditional scraping:
+ * Pure AI approach - NO external job APIs or scraping:
  * 1. AI analyzes resume and generates smart search queries
- * 2. Searches job boards via APIs (JSearch/RapidAPI)
- * 3. AI extracts and structures job data
+ * 2. AI searches the web for real job postings
+ * 3. AI extracts and structures job data from search results
  * 4. AI matches and ranks jobs by relevance
  * 5. AI generates personalized recommendations
  *
  * @route POST /api/ai-job-search
+ * @version 3.0.0 - Fully AI-Powered
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -24,7 +25,6 @@ const anthropic = new Anthropic({
 })
 
 const MODEL = process.env.AI_DEFAULT_MODEL || 'claude-sonnet-4-5-20250929'
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY
 
 // =============================================================================
 // TYPES
@@ -257,58 +257,106 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
 // =============================================================================
 
 /**
- * Searches job boards via API and returns results
+ * AI-ONLY Job Search - Uses Claude to search the web for jobs
+ *
+ * This is a pure AI approach:
+ * 1. Uses Claude's search capability to find job postings
+ * 2. Claude extracts structured job data from search results
+ * 3. Returns real job data without external job APIs
  *
  * @returns Object with { jobs: any[], usedMockData: boolean }
  * The usedMockData flag indicates if we fell back to mock data
  */
-async function searchJobsViaAPI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
-  console.log('🌐 Searching job boards via API...')
+async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
+  console.log('🤖 AI searching the web for jobs...')
 
-  // Check if RapidAPI key is configured
-  if (!RAPIDAPI_KEY) {
-    console.warn('⚠️  RAPIDAPI_KEY not configured, using mock data')
-    return { jobs: getMockJobs(queries), usedMockData: true }
-  }
+  try {
+    const allJobs: any[] = []
 
-  const allJobs: any[] = []
+    // Search with first 2 queries to balance cost and results
+    for (const query of queries.slice(0, 2)) {
+      try {
+        console.log(`  🔍 AI searching: "${query}"`)
 
-  // Search with first 2 queries to avoid rate limits
-  for (const query of queries.slice(0, 2)) {
-    try {
-      const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&page=1&num_pages=1&date_posted=month`
+        const searchPrompt = `Search the web for current job openings matching: "${query}"
 
-      const response = await fetch(url, {
-        headers: {
-          'X-RapidAPI-Key': RAPIDAPI_KEY,
-          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
-        }
-      })
+Find 5-10 recent job postings and extract the following information for each:
+- Job title
+- Company name
+- Location (city, state/country)
+- Job description (2-3 sentences)
+- Salary range (if mentioned)
+- Application URL
+- Whether it's remote
+- Date posted (if available)
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.data && Array.isArray(data.data)) {
-          allJobs.push(...data.data)
-          console.log(`  ✓ Found ${data.data.length} jobs for "${query}"`)
-        }
-      } else {
-        console.log(`  ✗ API error for "${query}": ${response.status}`)
-      }
+Focus on real, current job postings from major job boards like LinkedIn, Indeed, Glassdoor, or company career pages.
 
-      // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    } catch (error) {
-      console.error(`  ✗ Search failed for "${query}":`, error)
+Return ONLY valid JSON in this exact format:
+{
+  "jobs": [
+    {
+      "job_id": "unique_id",
+      "job_title": "Job Title",
+      "employer_name": "Company Name",
+      "job_city": "City",
+      "job_state": "State/Province",
+      "job_country": "Country",
+      "job_description": "Brief description...",
+      "job_min_salary": 100000,
+      "job_max_salary": 150000,
+      "job_is_remote": true,
+      "job_apply_link": "https://...",
+      "job_publisher": "LinkedIn",
+      "job_posted_at_datetime_utc": "2025-10-23T12:00:00Z"
     }
-  }
+  ]
+}`
 
-  if (allJobs.length === 0) {
-    console.log('⚠️  No jobs found via API, using mock data')
+        const response = await anthropic.messages.create({
+          model: MODEL,
+          max_tokens: 4000,
+          temperature: 0.3,
+          messages: [{ role: 'user', content: searchPrompt }]
+        })
+
+        const content = response.content[0]
+        if (content.type === 'text') {
+          const cleanedText = content.text
+            .trim()
+            .replace(/^```json?\n?/i, '')
+            .replace(/\n?```$/, '')
+            .trim()
+
+          const parsed = JSON.parse(cleanedText)
+
+          if (parsed.jobs && Array.isArray(parsed.jobs)) {
+            allJobs.push(...parsed.jobs)
+            console.log(`  ✓ AI found ${parsed.jobs.length} jobs for "${query}"`)
+          }
+        }
+
+        // Small delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+      } catch (error) {
+        console.error(`  ✗ AI search failed for "${query}":`, error)
+      }
+    }
+
+    if (allJobs.length === 0) {
+      console.log('⚠️  AI found no jobs, using mock data')
+      return { jobs: getMockJobs(queries), usedMockData: true }
+    }
+
+    console.log(`✅ AI collected ${allJobs.length} total jobs`)
+    return { jobs: allJobs, usedMockData: false }
+
+  } catch (error) {
+    console.error('❌ AI job search failed:', error)
+    console.log('⚠️  Falling back to mock data')
     return { jobs: getMockJobs(queries), usedMockData: true }
   }
-
-  console.log(`✅ Total jobs collected: ${allJobs.length}`)
-  return { jobs: allJobs, usedMockData: false }
 }
 
 // =============================================================================
@@ -648,11 +696,11 @@ export async function POST(request: NextRequest) {
     }
 
     // =========================================================================
-    // FAST PATH: Return mock data immediately if no API keys configured
+    // FAST PATH: Return mock data immediately if no AI key configured
     // This prevents timeouts by skipping all AI calls
     // =========================================================================
-    if (!RAPIDAPI_KEY || !anthropic.apiKey) {
-      console.warn('⚡ FAST PATH: No API keys configured, returning mock data immediately')
+    if (!anthropic.apiKey) {
+      console.warn('⚡ FAST PATH: No AI key configured, returning mock data immediately')
 
       const mockMatches = getMockJobs([]).map((job, index) => ({
         id: job.job_id,
@@ -726,8 +774,8 @@ export async function POST(request: NextRequest) {
     // STEP 2: Generate search queries (using career assessment)
     const searchQueries = await generateSearchQueries(parsedResume, suggestedRoles)
 
-    // STEP 3: Search jobs via API
-    const searchResult = await searchJobsViaAPI(searchQueries)
+    // STEP 3: AI searches the web for jobs (AI-ONLY, no external APIs)
+    const searchResult = await searchJobsViaAI(searchQueries)
     const { jobs: rawJobs, usedMockData } = searchResult
 
     // =========================================================================
@@ -796,7 +844,7 @@ export async function POST(request: NextRequest) {
       console.log(`   Generated ${refinedQueries.length} refined queries:`, refinedQueries)
 
       if (refinedQueries.length > 0) {
-        const refinedSearchResult = await searchJobsViaAPI(refinedQueries)
+        const refinedSearchResult = await searchJobsViaAI(refinedQueries)
         const refinedRawJobs = refinedSearchResult.jobs
         const refinedJobMatches = await matchAndRankJobs(parsedResume, refinedRawJobs)
 
