@@ -257,23 +257,23 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
 // =============================================================================
 
 /**
- * Search for real jobs using web scraping (no API keys needed)
+ * Search for real jobs using serverless-compatible APIs
  *
  * This approach:
- * 1. Uses Puppeteer scrapers to fetch real jobs from multiple boards
- * 2. Scrapes: Indeed, LinkedIn, RemoteOK, Glassdoor, etc.
- * 3. Completely free - no API costs
- * 4. Falls back to mock data only if all scrapers fail
+ * 1. Uses RemoteOK API (completely free, no key needed)
+ * 2. Falls back to JSearch API (RapidAPI) if available
+ * 3. Works in Netlify serverless environment (no Puppeteer/Chrome needed)
+ * 4. Falls back to mock data only if all APIs fail
  *
  * @returns Object with { jobs: any[], usedMockData: boolean }
  * The usedMockData flag indicates if we fell back to mock data
  */
 async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
-  console.log('🔍 Searching for real jobs via web scraping...')
+  console.log('🔍 Searching for real jobs via serverless APIs...')
 
   try {
-    // Import the scraper-based job search service
-    const { scraperJobSearchService } = await import('@/lib/services/scraper-job-search')
+    // Import the job search service (uses RemoteOK and JSearch APIs)
+    const { jobSearchService } = await import('@/lib/services/job-search')
 
     const allJobs: any[] = []
 
@@ -281,17 +281,14 @@ async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMo
     const primaryQuery = queries[0]
     console.log(`  🔍 Primary search: "${primaryQuery}"`)
 
-    // Search using scrapers (uses location-aware scraper selection)
-    const result = await scraperJobSearchService.searchJobs(
-      { keywords: primaryQuery },
-      {
-        parallel: true, // Run scrapers in parallel for faster results
-        maxResultsPerSource: 5, // Limit results per scraper to avoid timeout
-      }
-    )
+    // Search using API-based service (works in serverless)
+    const result = await jobSearchService.searchJobs({
+      keywords: primaryQuery,
+      remote: true // Prefer remote jobs for broader results
+    })
 
     if (result.jobs && result.jobs.length > 0) {
-      // Transform scraper results to expected format
+      // Transform API results to expected format
       const transformed = result.jobs.map(job => ({
         job_id: job.id,
         job_title: job.title,
@@ -302,23 +299,22 @@ async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMo
         job_description: job.description,
         job_min_salary: job.salary ? parseInt(job.salary.replace(/\D/g, '')) || undefined : undefined,
         job_max_salary: job.salary ? (parseInt(job.salary.replace(/\D/g, '')) * 1.2) || undefined : undefined,
-        job_is_remote: job.type?.toLowerCase().includes('remote') || false,
+        job_is_remote: job.type?.toLowerCase().includes('remote') || true,
         job_apply_link: job.url || '',
-        job_publisher: job.source || 'Web Scraper',
+        job_publisher: job.source || 'RemoteOK',
         job_posted_at_datetime_utc: job.posted_date || new Date().toISOString()
       }))
 
       allJobs.push(...transformed)
-      console.log(`  ✓ Found ${transformed.length} jobs from ${result.sourcesUsed.length} sources`)
-      console.log(`  📊 Sources used: ${result.sourcesUsed.join(', ')}`)
+      console.log(`  ✓ Found ${transformed.length} real jobs from ${result.jobs[0]?.source || 'RemoteOK API'}`)
     }
 
     if (allJobs.length === 0) {
-      console.log('⚠️  No jobs found via scraping, using mock data')
+      console.log('⚠️  No jobs found via APIs, using mock data')
       return { jobs: getMockJobs(queries), usedMockData: true }
     }
 
-    console.log(`✅ Collected ${allJobs.length} total jobs (scraped in ${(result.scrapeDuration / 1000).toFixed(2)}s)`)
+    console.log(`✅ Collected ${allJobs.length} total real jobs`)
     return { jobs: allJobs, usedMockData: false }
 
   } catch (error) {
