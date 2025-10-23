@@ -8,9 +8,19 @@ export class OpenAIClient {
   constructor() {
     // Don't throw during construction to allow build-time imports
     // Error will be thrown when actually trying to use the client
-    this.client = new OpenAI({
-      apiKey: config.ai.openaiApiKey || '',
+    const apiKey = config.ai.openaiApiKey;
+
+    console.log('[OpenAIClient] Constructor called', {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      isProduction: process.env.NODE_ENV === 'production',
     });
+
+    this.client = new OpenAI({
+      apiKey: apiKey || '',
+    });
+
+    console.log('[OpenAIClient] Client instance created');
   }
 
   async generateText(

@@ -96,11 +96,20 @@ export const anthropicClient = new Anthropic({
 let _openaiClient: OpenAI | null = null;
 export function getOpenAIClient(): OpenAI {
   if (!_openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    console.log('[OpenAI Config] Initializing OpenAI client...', {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      hasBaseUrl: !!process.env.OPENAI_BASE_URL,
+    });
+
     _openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || '',
+      apiKey: apiKey || '',
       // Optional: Custom base URL if using a proxy
       baseURL: process.env.OPENAI_BASE_URL,
     });
+
+    console.log('[OpenAI Config] OpenAI client initialized successfully');
   }
   return _openaiClient;
 }

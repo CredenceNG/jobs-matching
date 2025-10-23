@@ -14,9 +14,17 @@ import OpenAI from 'openai';
 let openai: OpenAI | null = null;
 function getOpenAI() {
     if (!openai) {
-        openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY || '',
+        const apiKey = process.env.OPENAI_API_KEY;
+        console.log('[Resume Tailor API] Initializing OpenAI client', {
+            hasApiKey: !!apiKey,
+            apiKeyLength: apiKey?.length || 0,
         });
+
+        openai = new OpenAI({
+            apiKey: apiKey || '',
+        });
+
+        console.log('[Resume Tailor API] OpenAI client initialized');
     }
     return openai;
 }
