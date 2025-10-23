@@ -257,103 +257,73 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
 // =============================================================================
 
 /**
- * AI-ONLY Job Search - Uses Claude to search the web for jobs
+ * Search for real jobs using OpenWeb Ninja API
  *
- * This is a pure AI approach:
- * 1. Uses Claude's search capability to find job postings
- * 2. Claude extracts structured job data from search results
- * 3. Returns real job data without external job APIs
+ * This approach:
+ * 1. Uses OpenWeb Ninja API for real job postings
+ * 2. Returns structured job data
+ * 3. Falls back to mock data only if API fails
  *
  * @returns Object with { jobs: any[], usedMockData: boolean }
  * The usedMockData flag indicates if we fell back to mock data
  */
 async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
-  console.log('🤖 AI searching the web for jobs...')
+  console.log('🔍 Searching for real jobs via API...')
 
   try {
+    // Import the OpenWeb Ninja API
+    const { OpenWebNinjaAPI } = await import('@/lib/services/openweb-ninja-api')
+    const jobAPI = new OpenWebNinjaAPI()
+
     const allJobs: any[] = []
 
-    // Search with first 2 queries to balance cost and results
+    // Search with first 2 queries to balance results
     for (const query of queries.slice(0, 2)) {
       try {
-        console.log(`  🔍 AI searching: "${query}"`)
+        console.log(`  🔍 Searching: "${query}"`)
 
-        const searchPrompt = `Search the web for current job openings matching: "${query}"
+        const jobs = await jobAPI.searchJobs(query)
 
-Find 5-10 recent job postings and extract the following information for each:
-- Job title
-- Company name
-- Location (city, state/country)
-- Job description (2-3 sentences)
-- Salary range (if mentioned)
-- Application URL
-- Whether it's remote
-- Date posted (if available)
+        if (jobs && jobs.length > 0) {
+          // Transform to expected format
+          const transformed = jobs.map(job => ({
+            job_id: job.id,
+            job_title: job.title,
+            employer_name: job.company,
+            job_city: job.location.split(',')[0]?.trim() || job.location,
+            job_state: job.location.split(',')[1]?.trim() || '',
+            job_country: job.location.split(',')[2]?.trim() || 'US',
+            job_description: job.description,
+            job_min_salary: job.salary ? parseInt(job.salary.replace(/\D/g, '')) || undefined : undefined,
+            job_max_salary: job.salary ? (parseInt(job.salary.replace(/\D/g, '')) * 1.2) || undefined : undefined,
+            job_is_remote: job.type?.toLowerCase().includes('remote') || false,
+            job_apply_link: job.url || '',
+            job_publisher: job.source || 'OpenWeb Ninja',
+            job_posted_at_datetime_utc: job.posted_date || new Date().toISOString()
+          }))
 
-Focus on real, current job postings from major job boards like LinkedIn, Indeed, Glassdoor, or company career pages.
-
-Return ONLY valid JSON in this exact format:
-{
-  "jobs": [
-    {
-      "job_id": "unique_id",
-      "job_title": "Job Title",
-      "employer_name": "Company Name",
-      "job_city": "City",
-      "job_state": "State/Province",
-      "job_country": "Country",
-      "job_description": "Brief description...",
-      "job_min_salary": 100000,
-      "job_max_salary": 150000,
-      "job_is_remote": true,
-      "job_apply_link": "https://...",
-      "job_publisher": "LinkedIn",
-      "job_posted_at_datetime_utc": "2025-10-23T12:00:00Z"
-    }
-  ]
-}`
-
-        const response = await anthropic.messages.create({
-          model: MODEL,
-          max_tokens: 4000,
-          temperature: 0.3,
-          messages: [{ role: 'user', content: searchPrompt }]
-        })
-
-        const content = response.content[0]
-        if (content.type === 'text') {
-          const cleanedText = content.text
-            .trim()
-            .replace(/^```json?\n?/i, '')
-            .replace(/\n?```$/, '')
-            .trim()
-
-          const parsed = JSON.parse(cleanedText)
-
-          if (parsed.jobs && Array.isArray(parsed.jobs)) {
-            allJobs.push(...parsed.jobs)
-            console.log(`  ✓ AI found ${parsed.jobs.length} jobs for "${query}"`)
-          }
+          allJobs.push(...transformed)
+          console.log(`  ✓ Found ${jobs.length} jobs for "${query}"`)
         }
 
         // Small delay to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 500))
 
       } catch (error) {
-        console.error(`  ✗ AI search failed for "${query}":`, error)
+        console.error(`  ✗ Search failed for "${query}":`, error)
       }
     }
 
     if (allJobs.length === 0) {
-      console.log('⚠️  AI found no jobs, using mock data')
+      console.log('⚠️  No jobs found via API, using mock data')
       return { jobs: getMockJobs(queries), usedMockData: true }
     }
 
-    console.log(`✅ AI collected ${allJobs.length} total jobs`)
+    console.log(`✅ Collected ${allJobs.length} total jobs`)
     return { jobs: allJobs, usedMockData: false }
 
   } catch (error) {
-    console.error('❌ AI job search failed:', error)
+    console.error('❌ Job search failed:', error)
     console.log('⚠️  Falling back to mock data')
     return { jobs: getMockJobs(queries), usedMockData: true }
   }
