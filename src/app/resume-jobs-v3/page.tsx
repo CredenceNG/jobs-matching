@@ -78,6 +78,7 @@ export default function ResumeJobSearchV3() {
     const [dragActive, setDragActive] = useState(false)
     const [darkMode, setDarkMode] = useState(false)
     const [refineSearch, setRefineSearch] = useState(true) // Enable AI-refined search by default
+    const [selectedModel, setSelectedModel] = useState<string>('claude-sonnet-4-5-20250929') // Default model
 
     const [results, setResults] = useState<{
         success: boolean
@@ -197,6 +198,7 @@ export default function ResumeJobSearchV3() {
             const formData = new FormData()
             formData.append('resume', file)
             formData.append('refineSearch', refineSearch.toString()) // Pass refined search flag
+            formData.append('model', selectedModel) // Pass selected AI model
 
             // Step 1: Resume Analysis
             updateStepStatus(1, 'processing')
@@ -454,6 +456,29 @@ export default function ResumeJobSearchV3() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* AI Model Selector */}
+                            {file && (
+                                <div className={`p-4 rounded-lg ${darkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                        Select AI Model:
+                                    </label>
+                                    <select
+                                        value={selectedModel}
+                                        onChange={(e) => setSelectedModel(e.target.value)}
+                                        className={`w-full px-4 py-2 rounded-lg border-2 ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                    >
+                                        <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Best Quality, Higher Cost)</option>
+                                        <option value="gpt-4o-mini">GPT-4o Mini (Good Quality, Low Cost)</option>
+                                        <option value="gpt-4o">GPT-4o (Excellent Quality, Medium Cost)</option>
+                                    </select>
+                                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {selectedModel === 'claude-sonnet-4-5-20250929' && '💎 Premium: Best reasoning, ~$0.05-0.10 per search'}
+                                        {selectedModel === 'gpt-4o-mini' && '💰 Budget: Great value, ~$0.01-0.02 per search'}
+                                        {selectedModel === 'gpt-4o' && '⚡ Balanced: High quality, ~$0.03-0.05 per search'}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* AI Refined Search Toggle */}
                             {file && (

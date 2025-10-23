@@ -62,7 +62,7 @@ interface JobMatch {
 // STEP 1: PARSE RESUME WITH AI
 // =============================================================================
 
-async function parseResumeWithAI(resumeText: string): Promise<ParsedResume> {
+async function parseResumeWithAI(resumeText: string, model: string = MODEL): Promise<ParsedResume> {
   console.log('📄 Parsing resume with AI...')
 
   const prompt = `Extract key information from this resume:
@@ -84,7 +84,7 @@ Focus on technical skills, job titles, and years of experience.`
 
   try {
     const response = await anthropic.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 1000,
       temperature: 0.2,
       messages: [{ role: 'user', content: prompt }]
@@ -657,6 +657,9 @@ export async function POST(request: NextRequest) {
     // Parse form data
     const formData = await request.formData()
     const resumeFile = formData.get('resume') as File
+    const selectedModel = (formData.get('model') as string) || MODEL // Get selected model or use default
+
+    console.log(`🤖 Using AI model: ${selectedModel}`)
 
     if (!resumeFile) {
       return NextResponse.json(
@@ -735,7 +738,7 @@ export async function POST(request: NextRequest) {
     console.log(`📝 First 200 chars: ${resumeText.substring(0, 200)}...`)
 
     // STEP 1: Parse resume with AI
-    const parsedResume = await parseResumeWithAI(resumeText)
+    const parsedResume = await parseResumeWithAI(resumeText, selectedModel)
 
     // STEP 1.5: Quick career assessment (identify optimal role pivots)
     const suggestedRoles = await quickCareerAssessment(parsedResume)
