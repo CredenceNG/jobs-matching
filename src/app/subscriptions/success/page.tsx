@@ -7,12 +7,15 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Check, Sparkles, ArrowRight, Crown } from 'lucide-react';
 import Link from 'next/link';
 
-export default function SubscriptionSuccessPage() {
+// Prevent static generation - this page needs dynamic rendering
+export const dynamic = 'force-dynamic';
+
+function SubscriptionSuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [isVerifying, setIsVerifying] = useState(true);
@@ -199,5 +202,20 @@ export default function SubscriptionSuccessPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SubscriptionSuccessPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        }>
+            <SubscriptionSuccessContent />
+        </Suspense>
     );
 }

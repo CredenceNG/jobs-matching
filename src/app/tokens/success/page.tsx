@@ -7,14 +7,17 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { Check, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import TokenBalance from '@/components/tokens/TokenBalance';
 
-export default function TokenSuccessPage() {
+// Prevent static generation - this page needs dynamic rendering
+export const dynamic = 'force-dynamic';
+
+function TokenSuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { balance, refreshBalance } = useTokenBalance();
@@ -174,5 +177,20 @@ export default function TokenSuccessPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function TokenSuccessPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        }>
+            <TokenSuccessContent />
+        </Suspense>
     );
 }
