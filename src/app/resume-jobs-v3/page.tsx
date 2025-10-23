@@ -578,7 +578,24 @@ export default function ResumeJobSearchV3() {
                                             </div>
                                         </div>
 
-                                        {/* Search Queries Used */}
+                                        {/* Data Source Indicator */}
+                                        {(results as any).usedMockData && (
+                                            <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded-lg">
+                                                <div className="flex items-start gap-3">
+                                                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <p className="font-semibold text-yellow-800 dark:text-yellow-300">
+                                                            Using Demo Data
+                                                        </p>
+                                                        <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                                                            Job search APIs are currently unavailable. Showing sample jobs to demonstrate the AI matching system.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                    {/* Search Queries Used */}
                                         {results.searchQueries && results.searchQueries.length > 0 && (
                                             <div>
                                                 <h3 className={`text-lg font-bold ${textClass} mb-3`}>AI Generated Searches:</h3>
@@ -632,7 +649,14 @@ export default function ResumeJobSearchV3() {
                                                 >
                                                     {/* Job Header */}
                                                     <div className="mb-4">
-                                                        <h4 className={`text-xl font-bold ${textClass} mb-2`}>{job.title}</h4>
+                                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                                            <h4 className={`text-xl font-bold ${textClass}`}>{job.title}</h4>
+                                                            {job.source === 'Mock Data' && (
+                                                                <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-semibold rounded-full">
+                                                                    DEMO
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <div className="flex flex-wrap gap-4 text-sm">
                                                             <span className={`${textSecondaryClass} flex items-center gap-1`}>
                                                                 <Building2 className="w-4 h-4" />
