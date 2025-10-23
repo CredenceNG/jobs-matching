@@ -10,7 +10,7 @@
  * @note Glassdoor has anti-scraping measures - use carefully with rate limiting
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'puppeteer-core';
 import {
   BaseScraper,
   ScraperConfig,

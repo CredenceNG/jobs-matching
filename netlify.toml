@@ -1,0 +1,23 @@
+# Netlify Configuration for JobAI Search
+# Enables Puppeteer with serverless-compatible Chrome
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[functions]
+  # Use esbuild for faster builds
+  node_bundler = "esbuild"
+
+  # Exclude large packages from bundling
+  # @sparticuz/chromium downloads Chrome dynamically at runtime
+  external_node_modules = ["@sparticuz/chromium", "puppeteer-core"]
+
+  # Increase function timeout for web scraping
+  # Default is 10s, scraping can take 20-30s
+  timeout = 30
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

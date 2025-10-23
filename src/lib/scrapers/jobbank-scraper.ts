@@ -9,7 +9,7 @@
  * @source https://www.jobbank.gc.ca
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'puppeteer-core';
 import {
   BaseScraper,
   ScraperConfig,

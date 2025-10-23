@@ -9,7 +9,7 @@
  * @source https://www.indeed.com
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'puppeteer-core';
 import {
   BaseScraper,
   ScraperConfig,

@@ -11,7 +11,8 @@
  * @description Foundation for all web scraping operations
  */
 
-import puppeteer, { Browser, Page } from "puppeteer";
+import { Browser, Page } from "puppeteer-core";
+import { launchServerlessBrowser, closeBrowser } from "./serverless-browser";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -67,21 +68,16 @@ export abstract class BaseScraper<T> {
   /**
    * Initialize browser instance
    * Reuses existing browser to save resources
+   * Uses serverless-compatible Chrome launcher
    */
   protected async getBrowser(): Promise<Browser> {
     if (!this.browser) {
       console.log(`🌐 [${this.config.name}] Launching browser...`);
 
-      this.browser = await puppeteer.launch({
+      // Use serverless-compatible browser launcher
+      this.browser = await launchServerlessBrowser({
         headless: this.config.headless,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
-          "--disable-gpu",
-          "--window-size=1920x1080",
-        ],
+        timeout: this.config.timeout,
       });
 
       console.log(`✅ [${this.config.name}] Browser launched`);
@@ -233,11 +229,12 @@ export abstract class BaseScraper<T> {
 
   /**
    * Clean up browser resources
+   * Uses serverless-compatible cleanup
    */
   async closeBrowser(): Promise<void> {
     if (this.browser) {
       console.log(`🔚 [${this.config.name}] Closing browser...`);
-      await this.browser.close();
+      await closeBrowser(this.browser);
       this.browser = null;
     }
   }

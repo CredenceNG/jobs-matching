@@ -9,7 +9,7 @@
  * @source https://weworkremotely.com
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'puppeteer-core';
 import {
   BaseScraper,
   ScraperConfig,
