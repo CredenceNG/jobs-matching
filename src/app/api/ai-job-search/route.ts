@@ -275,57 +275,66 @@ Return ONLY valid JSON: { "queries": ["query1", "query2", ...] }`
  * The usedMockData flag indicates if we fell back to mock data
  */
 async function searchJobsViaAI(queries: string[]): Promise<{ jobs: any[], usedMockData: boolean }> {
-  console.log('🔍 Searching for real jobs via serverless APIs...')
+  console.log('🔍 Searching for real jobs via RemoteOK API (direct fetch)...')
 
   try {
-    // Import the job search service (uses RemoteOK and JSearch APIs)
-    const { jobSearchService } = await import('@/lib/services/job-search')
-
-    const allJobs: any[] = []
-
-    // Use first query as primary search (most relevant)
     const primaryQuery = queries[0]
     console.log(`  🔍 Primary search: "${primaryQuery}"`)
 
-    // Search using API-based service (works in serverless)
-    // Will try: RemoteOK → Adzuna → JSearch (covers all job types)
-    const result = await jobSearchService.searchJobs({
-      keywords: primaryQuery
-      // No remote filter - let APIs return all job types (remote, on-site, hybrid)
+    // DIRECT API CALL - No service layers, no dependencies, just fetch
+    console.log('🚀 Calling RemoteOK API directly...')
+    const response = await fetch('https://remoteok.io/api', {
+      headers: {
+        'User-Agent': 'JobAI-Search/1.0',
+      },
     })
 
-    if (result.jobs && result.jobs.length > 0) {
-      // Transform API results to expected format
-      const transformed = result.jobs.map(job => ({
-        job_id: job.id,
-        job_title: job.title,
-        employer_name: job.company,
-        job_city: job.location.split(',')[0]?.trim() || job.location,
-        job_state: job.location.split(',')[1]?.trim() || '',
-        job_country: job.location.split(',')[2]?.trim() || 'US',
-        job_description: job.description,
-        job_min_salary: job.salary ? parseInt(job.salary.replace(/\D/g, '')) || undefined : undefined,
-        job_max_salary: job.salary ? (parseInt(job.salary.replace(/\D/g, '')) * 1.2) || undefined : undefined,
-        job_is_remote: job.type?.toLowerCase().includes('remote') || true,
-        job_apply_link: job.url || '',
-        job_publisher: job.source || 'RemoteOK',
-        job_posted_at_datetime_utc: job.posted_date || new Date().toISOString()
-      }))
-
-      allJobs.push(...transformed)
-      console.log(`  ✓ Found ${transformed.length} real jobs from ${result.jobs[0]?.source || 'RemoteOK API'}`)
+    if (!response.ok) {
+      throw new Error(`RemoteOK API failed: ${response.status}`)
     }
 
-    if (allJobs.length === 0) {
-      console.log('⚠️  No jobs found via APIs, using mock data')
+    const data = await response.json()
+    console.log(`✅ RemoteOK returned ${data.length} jobs`)
+
+    // Filter by keywords (simple client-side filtering)
+    const keywords = primaryQuery.toLowerCase().split(' ')
+    let filteredJobs = data.slice(1) // Remove first item (metadata)
+
+    // Filter jobs that match any keyword
+    filteredJobs = filteredJobs.filter((job: any) => {
+      const searchText = `${job.position || ''} ${job.company || ''} ${job.description || ''}`.toLowerCase()
+      return keywords.some(keyword => searchText.includes(keyword))
+    })
+
+    console.log(`  ✓ Filtered to ${filteredJobs.length} jobs matching "${primaryQuery}"`)
+
+    // Take first 20 jobs
+    const jobs = filteredJobs.slice(0, 20).map((job: any) => ({
+      job_id: job.id || Math.random().toString(36).substr(2, 9),
+      job_title: job.position || 'Remote Position',
+      employer_name: job.company || 'Company',
+      job_city: job.location || 'Remote',
+      job_state: '',
+      job_country: 'Worldwide',
+      job_description: job.description || job.position,
+      job_min_salary: job.salary_min || undefined,
+      job_max_salary: job.salary_max || undefined,
+      job_is_remote: true,
+      job_apply_link: job.url || job.apply_url || '',
+      job_publisher: 'RemoteOK',
+      job_posted_at_datetime_utc: job.date || new Date().toISOString()
+    }))
+
+    if (jobs.length === 0) {
+      console.log('⚠️  No jobs found, using mock data')
       return { jobs: getMockJobs(queries), usedMockData: true }
     }
 
-    console.log(`✅ Collected ${allJobs.length} total real jobs`)
-    return { jobs: allJobs, usedMockData: false }
+    console.log(`✅ Returning ${jobs.length} real remote jobs`)
+    return { jobs, usedMockData: false }
 
   } catch (error) {
-    console.error('❌ Job search failed:', error)
+    console.error('❌ RemoteOK API failed:', error)
     console.log('⚠️  Falling back to mock data')
     return { jobs: getMockJobs(queries), usedMockData: true }
   }
