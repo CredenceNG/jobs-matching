@@ -104,22 +104,44 @@ export default function Home() {
                             AI-powered job matching that understands your skills, experience, and career goals. No signup required to start.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-                            <a
-                                href="/resume-jobs-v2"
-                                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
-                            >
-                                Start Free Search
-                                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
-                            </a>
-                            <a
-                                href="/resume-jobs-v2"
-                                className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all"
-                            >
-                                Upload Resume
-                            </a>
+                        {/* Version Selector */}
+                        <div className="max-w-4xl mx-auto mb-8">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Choose Your Job Search Method</h2>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* V2 - Original */}
+                                <a href="/resume-jobs-v2" className="group p-6 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-bold text-blue-600">V2: Original</span>
+                                        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">Stable</span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Classic Search</h3>
+                                    <p className="text-sm text-gray-600 mb-3">Basic AI matching with established APIs</p>
+                                    <div className="text-xs text-gray-500">⚡ Fast (2-5s)</div>
+                                </a>
+
+                                {/* V3 - API Based */}
+                                <a href="/resume-jobs-v3" className="group p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-blue-300 hover:border-blue-500 hover:shadow-xl transition-all">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-bold text-blue-700">V3: API-Based</span>
+                                        <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">Recommended</span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Smart API Search</h3>
+                                    <p className="text-sm text-gray-600 mb-3">Multi-API (Adzuna, RemoteOK) with AI ranking</p>
+                                    <div className="text-xs text-gray-500">🌍 Global • ⚡ Fast (under 5s)</div>
+                                </a>
+
+                                {/* V4 - Web Scraping */}
+                                <a href="/resume-jobs-v4" className="group p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-300 hover:border-purple-500 hover:shadow-xl transition-all">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-bold text-purple-700">V4: Web Scraping</span>
+                                        <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded">Most Jobs</span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Comprehensive Scrape</h3>
+                                    <p className="text-sm text-gray-600 mb-3">Real-time scraping from Indeed, ZipRecruiter</p>
+                                    <div className="text-xs text-gray-500">🕷️ Slower (15-25s) • 📊 Most Results</div>
+                                </a>
+                            </div>
                         </div>
 
                         <p className="text-sm text-gray-500">
