@@ -398,7 +398,7 @@ export class JobSearchService {
   private adzuna = new AdzunaAPI();
 
   // Timeout constants to prevent 504 Gateway Timeout errors
-  private readonly API_TIMEOUT_MS = 3000; // 3 seconds max per API call
+  private readonly API_TIMEOUT_MS = 10000; // 10 seconds max per API call (increased for serverless)
   private readonly SCRAPER_TIMEOUT_MS = 8000; // 8 seconds max for scraping
   private readonly DATABASE_TIMEOUT_MS = 2000; // 2 seconds max for database queries
 
@@ -495,62 +495,69 @@ export class JobSearchService {
 
     // =========================================================================
     // LAYER 3: JIT (Just-In-Time) SCRAPING - Fresh data (5-30s)
+    // SKIP IN SERVERLESS ENVIRONMENTS (Netlify, Vercel) - no Chrome available
     // =========================================================================
-    try {
-      console.log("🕷️  [JIT] Attempting real-time web scraping...");
+    const isServerless = process.env.NETLIFY || process.env.VERCEL || process.env.NODE_ENV === 'production';
 
-      // Use fast scrapers for JIT (avoid LinkedIn which is slow)
-      const { scraperJobSearchService } = await import('./scraper-job-search');
+    if (!isServerless) {
+      try {
+        console.log("🕷️  [JIT] Attempting real-time web scraping...");
 
-      const scraperResults = await withTimeout(
-        scraperJobSearchService.searchJobs(filters, {
-          sources: ['indeed', 'remoteok', 'ziprecruiter', 'monster'], // Fast sources only
-          parallel: true,
-          maxResultsPerSource: 20,
-        }),
-        this.SCRAPER_TIMEOUT_MS,
-        'JIT scraping timeout - scrapers took too long'
-      );
+        // Use fast scrapers for JIT (avoid LinkedIn which is slow)
+        const { scraperJobSearchService } = await import('./scraper-job-search');
 
-      if (scraperResults.jobs && scraperResults.jobs.length > 0) {
-        console.log(
-          `✅ [JIT] Scrapers found ${scraperResults.jobs.length} jobs from ${scraperResults.sourcesUsed.join(', ')}`
+        const scraperResults = await withTimeout(
+          scraperJobSearchService.searchJobs(filters, {
+            sources: ['indeed', 'remoteok', 'ziprecruiter', 'monster'], // Fast sources only
+            parallel: true,
+            maxResultsPerSource: 20,
+          }),
+          this.SCRAPER_TIMEOUT_MS,
+          'JIT scraping timeout - scrapers took too long'
         );
 
-        // Store in database for future searches
-        try {
-          const { jobStorageService } = await import('./job-storage.service');
-          const storedJobs = scraperResults.jobs.map(job => ({
-            external_id: job.id,
-            source: job.source || 'jit-scraper',
-            title: job.title,
-            company: job.company,
-            location: job.location,
-            employment_type: job.type,
-            description: job.description,
-            url: job.url,
-            posted_date: job.posted_date,
-            raw_data: job,
-          }));
+        if (scraperResults.jobs && scraperResults.jobs.length > 0) {
+          console.log(
+            `✅ [JIT] Scrapers found ${scraperResults.jobs.length} jobs from ${scraperResults.sourcesUsed.join(', ')}`
+          );
 
-          await jobStorageService.storeJobs(storedJobs as any);
-          console.log(`💾 [JIT] Stored ${storedJobs.length} jobs in database`);
-        } catch (storeError) {
-          console.warn("⚠️  Failed to store JIT results:", storeError);
+          // Store in database for future searches
+          try {
+            const { jobStorageService } = await import('./job-storage.service');
+            const storedJobs = scraperResults.jobs.map(job => ({
+              external_id: job.id,
+              source: job.source || 'jit-scraper',
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              employment_type: job.type,
+              description: job.description,
+              url: job.url,
+              posted_date: job.posted_date,
+              raw_data: job,
+            }));
+
+            await jobStorageService.storeJobs(storedJobs as any);
+            console.log(`💾 [JIT] Stored ${storedJobs.length} jobs in database`);
+          } catch (storeError) {
+            console.warn("⚠️  Failed to store JIT results:", storeError);
+          }
+
+          const duration = Date.now() - startTime;
+          console.log(`✅ [JIT] Returned ${scraperResults.jobs.length} jobs in ${duration}ms`);
+
+          return {
+            jobs: scraperResults.jobs,
+            total: scraperResults.total,
+            page: scraperResults.page,
+            hasMore: scraperResults.hasMore,
+          };
         }
-
-        const duration = Date.now() - startTime;
-        console.log(`✅ [JIT] Returned ${scraperResults.jobs.length} jobs in ${duration}ms`);
-
-        return {
-          jobs: scraperResults.jobs,
-          total: scraperResults.total,
-          page: scraperResults.page,
-          hasMore: scraperResults.hasMore,
-        };
+      } catch (scraperError) {
+        console.warn("⚠️  JIT scraping failed, falling back to APIs...", scraperError);
       }
-    } catch (scraperError) {
-      console.warn("⚠️  JIT scraping failed, falling back to APIs...", scraperError);
+    } else {
+      console.log("⏭️  [JIT] Skipping web scraping in serverless environment, proceeding to API fallbacks...");
     }
 
     // =========================================================================
@@ -564,7 +571,7 @@ export class JobSearchService {
       const result = await withTimeout(
         this.remoteOK.searchJobs(filters, page),
         this.API_TIMEOUT_MS,
-        'RemoteOK API timeout after 3 seconds'
+        'RemoteOK API timeout after 10 seconds'
       );
 
       if (result.jobs && result.jobs.length > 0) {
@@ -582,7 +589,7 @@ export class JobSearchService {
         const result = await withTimeout(
           this.adzuna.searchJobs(filters, page),
           this.API_TIMEOUT_MS,
-          'Adzuna API timeout after 3 seconds'
+          'Adzuna API timeout after 10 seconds'
         );
 
         if (result.jobs && result.jobs.length > 0) {
@@ -601,7 +608,7 @@ export class JobSearchService {
         const result = await withTimeout(
           this.jsearch.searchJobs(filters, page),
           this.API_TIMEOUT_MS,
-          'JSearch API timeout after 3 seconds'
+          'JSearch API timeout after 10 seconds'
         );
 
         if (result.jobs && result.jobs.length > 0) {
