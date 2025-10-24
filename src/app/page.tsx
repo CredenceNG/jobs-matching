@@ -131,16 +131,16 @@ export default function Home() {
                                     <div className="text-xs text-gray-500">🌍 Global • ⚡ Fast (under 5s)</div>
                                 </a>
 
-                                {/* V4 - Web Scraping */}
-                                <a href="/resume-jobs-v4" className="group p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-300 hover:border-purple-500 hover:shadow-xl transition-all">
+                                {/* V4 - Web Scraping - Disabled in production for now */}
+                                <div className="group p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-300 opacity-75 cursor-not-allowed">
                                     <div className="flex items-center justify-between mb-3">
-                                        <span className="text-sm font-bold text-purple-700">V4: Web Scraping</span>
-                                        <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded">Most Jobs</span>
+                                        <span className="text-sm font-bold text-gray-600">V4: Web Scraping</span>
+                                        <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">Beta</span>
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Comprehensive Scrape</h3>
-                                    <p className="text-sm text-gray-600 mb-3">Real-time scraping from Indeed, ZipRecruiter</p>
-                                    <div className="text-xs text-gray-500">🕷️ Slower (15-25s) • 📊 Most Results</div>
-                                </a>
+                                    <h3 className="text-lg font-bold text-gray-700 mb-2">Comprehensive Scrape</h3>
+                                    <p className="text-sm text-gray-600 mb-3">Real-time scraping (requires additional setup)</p>
+                                    <div className="text-xs text-gray-500">🔧 Coming Soon</div>
+                                </div>
                             </div>
                         </div>
 
