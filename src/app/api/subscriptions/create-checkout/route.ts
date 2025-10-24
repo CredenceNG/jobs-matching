@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
             },
         });
-        const customerId = customer.id;
+        const customerId: string = customer.id;
 
         // TODO: Save customer ID to database once stripeCustomerId field is available
         console.log('✅ [Subscription Checkout] Created/Using Stripe customer:', customerId);
