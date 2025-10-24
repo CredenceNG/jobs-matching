@@ -12,7 +12,3 @@
   # Exclude large packages from bundling
   # @sparticuz/chromium downloads Chrome dynamically at runtime
   external_node_modules = ["@sparticuz/chromium", "puppeteer-core"]
-
-  # Increase function timeout for web scraping
-  # Default is 10s, scraping can take 20-30s
-  timeout = 30
